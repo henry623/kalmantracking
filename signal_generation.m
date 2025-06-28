@@ -23,9 +23,9 @@ else
 end
 
 % 将Weil码重复以覆盖整个信号持续时间
-code_samples = round(fs * duration / length(weil_code));
+code_samples = length(t);
 repeated_code = repmat(weil_code, 1, ceil(code_samples / length(weil_code)));
-repeated_code = repeated_code(1:length(t));
+repeated_code = repeated_code(1:code_samples);
 
 % 生成载波信号
 carrier = cos(2*pi*fc*t);
