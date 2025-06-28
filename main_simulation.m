@@ -8,7 +8,8 @@ fs = 1e6;  % 采样频率 (Hz)
 duration = 1;  % 仿真持续时间 (s)
 t = 0:1/fs:duration-1/fs;  % 时间向量
 fc = 1.5e9;  % 载波频率 (Hz)
-weil_length = 1023;  % Weil码长度
+weil_length = 10230;  % Weil码长度
+use_custom_code = true;  % 使用自定义Weil码
 v = 1000;  % 初始速度 (m/s)
 a = 100;  % 加速度 (m/s^2)
 snr_db = -10;  % 信噪比 (dB)
@@ -23,7 +24,7 @@ dll_params.damping = 0.707;  % 阻尼系数
 dll_params.early_late_spacing = 0.5;  % 早晚码间隔 (码片)
 
 % 2. 生成信号
-[signal, t] = signal_generation(fs, duration, fc, weil_length);
+[signal, t] = signal_generation(fs, duration, fc, weil_length, use_custom_code);
 
 % 3. 生成信道响应
 [channel_response, doppler_shift] = channel_model(t, fc, v, a);
