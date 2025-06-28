@@ -226,5 +226,11 @@ for loopCnt=1:size(t0,2)
     output.OutCodeNCO(loopCnt)=codeError;
     output.OutBlksize(loopCnt)=blksize;
     output.OutRemCode(loopCnt)=remCodePhase;
+    output.I_E(loopCnt)=I_E;
+    output.Q_E(loopCnt)=Q_E;
+    output.I_P(loopCnt)=I_P;
+    output.Q_P(loopCnt)=Q_P;
+    output.I_L(loopCnt)=I_L;
+    output.Q_L(loopCnt)=Q_L;
 
 end
