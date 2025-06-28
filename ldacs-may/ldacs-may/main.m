@@ -161,8 +161,31 @@ fprintf('卡尔曼滤波码相位距离RMSE: %.4f m\n', rmse_kalman_codePhase_di
 
 % 绘制I路bits of navigation message
 figure;
-plot(t0(1:800), output.I_P(1:800), 'b', t0(1:800), output.KF_CodePhase(1:800), 'r');
-title('I路bits of navigation message (前800个周期)');
+plot(t0, output.I_P, 'b', t0, output.KF_CodePhase, 'r');
+title('I路bits of navigation message');
 legend('原始跟踪', '卡尔曼滤波');
 xlabel('时间 (s)');
 ylabel('幅度/相位');
+xlim([0, max(t0)]); % 显示全部范围
+
+% 绘制码频率偏差
+figure;
+plot(t0, codeFreq - simSettings.fp, 'r-', 'LineWidth', 1.5, 'DisplayName', '原始跟踪');
+hold on;
+plot(t0, output.KF_CodeFreq - simSettings.fp, 'b-', 'LineWidth', 1.5, 'DisplayName', '卡尔曼滤波');
+title('码频率偏差');
+legend('show', 'Location', 'best');
+xlabel('时间 (s)');
+ylabel('频率偏差 (Hz)');
+xlim([0, max(t0)]); % 显示全部范围
+
+% 绘制码相位误差
+figure;
+plot(t0, codePhase - codePhase0, 'r-', 'LineWidth', 1.5, 'DisplayName', '原始跟踪');
+hold on;
+plot(t0, output.KF_CodePhase - codePhase0, 'b-', 'LineWidth', 1.5, 'DisplayName', '卡尔曼滤波');
+title('码相位误差');
+legend('show', 'Location', 'best');
+xlabel('时间 (s)');
+ylabel('相位误差');
+xlim([0, max(t0)]); % 显示全部范围
