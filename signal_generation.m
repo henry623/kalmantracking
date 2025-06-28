@@ -71,14 +71,12 @@ function weil_code = load_custom_weil_code(length)
 %   weil_code: 加载的Weil码序列
 
 % 加载.mat文件
-data = load('custom_weil_code.mat');
+load('weil10230_signed.mat');
 
-% 假设.mat文件中的Weil码变量名为'weil_code'
-if ~isfield(data, 'weil_code')
-    error('custom_weil_code.mat 文件中没有找到 weil_code 变量');
-end
 
-custom_code = data.weil_code;
+
+custom_code = weil10230_signed(1,:);
+disp(length(custom_code));
 
 % 检查加载的Weil码长度是否符合要求
 if length(custom_code) ~= length
