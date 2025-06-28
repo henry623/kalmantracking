@@ -131,3 +131,38 @@ plot(codeFreq0-simSettings.fp,'b-', 'LineWidth', 1.5, 'DisplayName', 'inf');
 legend('show', 'Location', 'best'); % 显示图例（自动选择最佳位置）
 rmse_codePhase = sqrt(sum(diff.^2)/size(diff,2))
 rmse_codePhase_dis = Ts*c*sqrt(sum(diff.^2)/size(diff,2))
+
+% 比较原始跟踪结果和卡尔曼滤波器改进后的结果
+figure;
+subplot(2,1,1);
+plot(t0, output.OutCodePhase, 'b', t0, output.KF_CodePhase, 'r');
+title('码相位比较');
+legend('原始跟踪', '卡尔曼滤波');
+xlabel('时间 (s)');
+ylabel('码相位');
+
+subplot(2,1,2);
+plot(t0, output.OutCarrPhase, 'b', t0, output.KF_CarrPhase, 'r');
+title('载波相位比较');
+legend('原始跟踪', '卡尔曼滤波');
+xlabel('时间 (s)');
+ylabel('载波相位');
+
+% 计算卡尔曼滤波器改进后的RMSE
+kalman_diff = output.KF_CodePhase - codePhase0;
+kalman_diff = kalman_diff(200:end);
+rmse_kalman_codePhase = sqrt(sum(kalman_diff.^2)/size(kalman_diff,2))
+rmse_kalman_codePhase_dis = Ts*c*sqrt(sum(kalman_diff.^2)/size(kalman_diff,2))
+
+fprintf('原始跟踪码相位RMSE: %.4f\n', rmse_codePhase);
+fprintf('卡尔曼滤波码相位RMSE: %.4f\n', rmse_kalman_codePhase);
+fprintf('原始跟踪码相位距离RMSE: %.4f m\n', rmse_codePhase_dis);
+fprintf('卡尔曼滤波码相位距离RMSE: %.4f m\n', rmse_kalman_codePhase_dis);
+
+% 绘制I路bits of navigation message
+figure;
+plot(t0(1:800), output.I_P(1:800), 'b', t0(1:800), output.KF_CodePhase(1:800), 'r');
+title('I路bits of navigation message (前800个周期)');
+legend('原始跟踪', '卡尔曼滤波');
+xlabel('时间 (s)');
+ylabel('幅度/相位');

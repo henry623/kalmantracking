@@ -13,6 +13,14 @@ t0 = 0:dt:t_sim;
 lenOFDM = simSettings.NFFT*simSettings.nSymbol;
 % lenOFDM = 10230;
 
+% 初始化卡尔曼滤波器
+kf.x = [0; 0; 0; 0];  % 初始状态 [码相位; 码频率; 载波相位; 载波频率]
+kf.P = eye(4) * 1e-6;  % 初始协方差矩阵
+kf.Q = diag([1e-8, 1e-8, 1e-8, 1e-8]);  % 过程噪声协方差
+kf.R = diag([1e-4, 1e-4]);  % 测量噪声协方差
+kf.H = [1 0 0 0; 0 0 1 0];  % 测量矩阵
+kf.F = [1 dt 0 0; 0 1 0 0; 0 0 1 dt; 0 0 0 1];  % 状态转移矩阵
+
 % 读取生成信号文件
 loadnm = ['output/signal_SNR'  num2str(SNR) '.mat' ];
 record_E = load(loadnm);
@@ -218,6 +226,24 @@ for loopCnt=1:size(t0,2)
     codeFreq = fp - codeNco;
     % codeFreq = fp;
 
+    % 卡尔曼滤波器预测步骤
+    kf.x = kf.F * kf.x;
+    kf.P = kf.F * kf.P * kf.F' + kf.Q;
+    
+    % 卡尔曼滤波器更新步骤
+    z = [codePhase; carrPhase];
+    y = z - kf.H * kf.x;
+    S = kf.H * kf.P * kf.H' + kf.R;
+    K = kf.P * kf.H' / S;
+    kf.x = kf.x + K * y;
+    kf.P = (eye(4) - K * kf.H) * kf.P;
+    
+    % 使用卡尔曼滤波器的估计结果
+    kf_codePhase = kf.x(1);
+    kf_codeFreq = kf.x(2);
+    kf_carrPhase = kf.x(3);
+    kf_carrFreq = kf.x(4);
+
     output.OutCarrFreq(loopCnt)=carrFreq;
     output.OutCodeFreq(loopCnt)=codeFreq;
     output.OutCarrPhase(loopCnt)=carrPhase;
@@ -232,5 +258,14 @@ for loopCnt=1:size(t0,2)
     output.Q_P(loopCnt)=Q_P;
     output.I_L(loopCnt)=I_L;
     output.Q_L(loopCnt)=Q_L;
-
+    
+    % 添加卡尔曼滤波器的结果到输出
+    output.KF_CodePhase(loopCnt) = kf_codePhase;
+    output.KF_CodeFreq(loopCnt) = kf_codeFreq;
+    output.KF_CarrPhase(loopCnt) = kf_carrPhase;
+    output.KF_CarrFreq(loopCnt) = kf_carrFreq;
 end
+
+% 添加卡尔曼滤波器的最终状态到输出
+output.KF_FinalState = kf.x;
+output.KF_FinalCovariance = kf.P;
