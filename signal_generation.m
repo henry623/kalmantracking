@@ -23,9 +23,9 @@ else
 end
 
 % 将Weil码重复以覆盖整个信号持续时间
-code_samples = round(fs * duration / weil_length);
-repeated_code = repmat(weil_code, 1, ceil(code_samples / weil_length));
-repeated_code = repeated_code(1:code_samples);
+code_samples = round(fs * duration / length(weil_code));
+repeated_code = repmat(weil_code, 1, ceil(code_samples / length(weil_code)));
+repeated_code = repeated_code(1:length(t));
 
 % 生成载波信号
 carrier = cos(2*pi*fc*t);
@@ -61,34 +61,27 @@ weil_code = 2 * weil_code - 1;
 
 end
 
-function weil_code = load_custom_weil_code(length)
+function weil_code = load_custom_weil_code(~)
 % 加载自定义Weil码
-%
-% 输入参数：
-%   length: 期望的Weil码长度
 %
 % 输出参数：
 %   weil_code: 加载的Weil码序列
 
 % 加载.mat文件
-load('weil10230_signed.mat');
+load('weil10230_signed.mat', 'weil10230_signed');
 
-
-
-custom_code = weil10230_signed(1,:);
-disp(length(custom_code));
-
-% 检查加载的Weil码长度是否符合要求
-if length(custom_code) ~= length
-    warning('加载的Weil码长度 (%d) 与要求的长度 (%d) 不符。将进行截断或重复。', length(custom_code), length);
-    if length(custom_code) > length
-        weil_code = custom_code(1:length);
-    else
-        weil_code = repmat(custom_code, 1, ceil(length / length(custom_code)));
-        weil_code = weil_code(1:length);
-    end
+% 确保weil10230_signed是一个行向量
+if size(weil10230_signed, 1) > size(weil10230_signed, 2)
+    weil_code = weil10230_signed';
 else
-    weil_code = custom_code;
+    weil_code = weil10230_signed;
 end
+
+% 确保weil_code是一个行向量
+if size(weil_code, 1) > size(weil_code, 2)
+    weil_code = weil_code';
+end
+
+fprintf('加载的Weil码长度: %d\n', length(weil_code));
 
 end
