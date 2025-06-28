@@ -1,6 +1,9 @@
  function [output]=track(simSettings, yr, yi)
 % 跟踪环路
 
+% 添加 kalman_filters 函数的路径
+addpath('ldacs-may/ldacs-may');
+
 % 仿真参数
 fp = simSettings.fp;
 fs = simSettings.fs;
@@ -19,7 +22,11 @@ kf.P = diag([1e-2, 1e-4, 1e-2, 1e-4]);  % 初始协方差矩阵
 kf.Q = diag([1e-6, 1e-8, 1e-6, 1e-8]);  % 过程噪声协方差
 kf.R = diag([1e-2, 1e-2]);  % 测量噪声协方差
 kf.H = [1 0 0 0; 0 0 1 0];  % 测量矩阵
-kf.F = [1 dt 0 0; 0 1 0 0; 0 0 1 dt; 0 0 0 1];  % 状态转移矩阵
+
+% 初始化不同类型的卡尔曼滤波器
+kf_standard = kf;
+kf_extended = kf;
+kf_unscented = kf;
 
 % 读取生成信号文件
 loadnm = ['output/signal_SNR'  num2str(SNR) '.mat' ];
@@ -226,23 +233,34 @@ for loopCnt=1:size(t0,2)
     codeFreq = fp - codeNco;
     % codeFreq = fp;
 
-    % 卡尔曼滤波器预测步骤
-    kf.x = kf.F * kf.x;
-    kf.P = kf.F * kf.P * kf.F' + kf.Q;
-    
-    % 卡尔曼滤波器更新步骤
+    % 使用不同类型的卡尔曼滤波器
     z = [codePhase; carrPhase];
-    y = z - kf.H * kf.x;
-    S = kf.H * kf.P * kf.H' + kf.R;
-    K = kf.P * kf.H' / S;
-    kf.x = kf.x + K * y;
-    kf.P = (eye(4) - K * kf.H) * kf.P;
     
-    % 使用卡尔曼滤波器的估计结果
-    kf_codePhase = kf.x(1);
-    kf_codeFreq = kf.x(2);
-    kf_carrPhase = kf.x(3);
-    kf_carrFreq = kf.x(4);
+    kf_standard = kalman_filters('standard', kf_standard, z, dt);
+    kf_extended = kalman_filters('extended', kf_extended, z, dt);
+    kf_unscented = kalman_filters('unscented', kf_unscented, z, dt);
+    
+    % 使用标准卡尔曼滤波器的估计结果
+    kf_codePhase = kf_standard.x(1);
+    kf_codeFreq = kf_standard.x(2);
+    kf_carrPhase = kf_standard.x(3);
+    kf_carrFreq = kf_standard.x(4);
+    
+    % 保存不同卡尔曼滤波器的结果
+    output.KF_Standard_CodePhase(loopCnt) = kf_standard.x(1);
+    output.KF_Standard_CodeFreq(loopCnt) = kf_standard.x(2);
+    output.KF_Standard_CarrPhase(loopCnt) = kf_standard.x(3);
+    output.KF_Standard_CarrFreq(loopCnt) = kf_standard.x(4);
+    
+    output.KF_Extended_CodePhase(loopCnt) = kf_extended.x(1);
+    output.KF_Extended_CodeFreq(loopCnt) = kf_extended.x(2);
+    output.KF_Extended_CarrPhase(loopCnt) = kf_extended.x(3);
+    output.KF_Extended_CarrFreq(loopCnt) = kf_extended.x(4);
+    
+    output.KF_Unscented_CodePhase(loopCnt) = kf_unscented.x(1);
+    output.KF_Unscented_CodeFreq(loopCnt) = kf_unscented.x(2);
+    output.KF_Unscented_CarrPhase(loopCnt) = kf_unscented.x(3);
+    output.KF_Unscented_CarrFreq(loopCnt) = kf_unscented.x(4);
 
     output.OutCarrFreq(loopCnt)=carrFreq;
     output.OutCodeFreq(loopCnt)=codeFreq;
