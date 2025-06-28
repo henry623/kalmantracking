@@ -135,14 +135,14 @@ rmse_codePhase_dis = Ts*c*sqrt(sum(diff.^2)/size(diff,2))
 % 比较原始跟踪结果和卡尔曼滤波器改进后的结果
 figure;
 subplot(2,1,1);
-plot(t0, output.OutCodePhase, 'b', t0, output.KF_CodePhase, 'r');
+plot(t, output.OutCodePhase, 'b', t, output.KF_CodePhase, 'r');
 title('码相位比较');
 legend('原始跟踪', '卡尔曼滤波');
 xlabel('时间 (s)');
 ylabel('码相位');
 
 subplot(2,1,2);
-plot(t0, output.OutCarrPhase, 'b', t0, output.KF_CarrPhase, 'r');
+plot(t, output.OutCarrPhase, 'b', t, output.KF_CarrPhase, 'r');
 title('载波相位比较');
 legend('原始跟踪', '卡尔曼滤波');
 xlabel('时间 (s)');
@@ -161,31 +161,31 @@ fprintf('卡尔曼滤波码相位距离RMSE: %.4f m\n', rmse_kalman_codePhase_di
 
 % 绘制I路bits of navigation message
 figure;
-plot(t0, output.I_P, 'b', t0, output.KF_CodePhase, 'r');
+plot(t, output.I_P, 'b', t, output.KF_CodePhase, 'r');
 title('I路bits of navigation message');
 legend('原始跟踪', '卡尔曼滤波');
 xlabel('时间 (s)');
 ylabel('幅度/相位');
-xlim([0, max(t0)]); % 显示全部范围
+xlim([0, max(t)]); % 显示全部范围
 
 % 绘制码频率偏差
 figure;
-plot(t0, codeFreq - simSettings.fp, 'r-', 'LineWidth', 1.5, 'DisplayName', '原始跟踪');
+plot(t, codeFreq - simSettings.fp, 'r-', 'LineWidth', 1.5, 'DisplayName', '原始跟踪');
 hold on;
-plot(t0, output.KF_CodeFreq - simSettings.fp, 'b-', 'LineWidth', 1.5, 'DisplayName', '卡尔曼滤波');
+plot(t, output.KF_CodeFreq - simSettings.fp, 'b-', 'LineWidth', 1.5, 'DisplayName', '卡尔曼滤波');
 title('码频率偏差');
 legend('show', 'Location', 'best');
 xlabel('时间 (s)');
 ylabel('频率偏差 (Hz)');
-xlim([0, max(t0)]); % 显示全部范围
+xlim([0, max(t)]); % 显示全部范围
 
 % 绘制码相位误差
 figure;
-plot(t0, codePhase - codePhase0, 'r-', 'LineWidth', 1.5, 'DisplayName', '原始跟踪');
+plot(t, codePhase - codePhase0, 'r-', 'LineWidth', 1.5, 'DisplayName', '原始跟踪');
 hold on;
-plot(t0, output.KF_CodePhase - codePhase0, 'b-', 'LineWidth', 1.5, 'DisplayName', '卡尔曼滤波');
+plot(t, output.KF_CodePhase - codePhase0, 'b-', 'LineWidth', 1.5, 'DisplayName', '卡尔曼滤波');
 title('码相位误差');
 legend('show', 'Location', 'best');
 xlabel('时间 (s)');
 ylabel('相位误差');
-xlim([0, max(t0)]); % 显示全部范围
+xlim([0, max(t)]); % 显示全部范围

@@ -14,7 +14,7 @@ lenOFDM = simSettings.NFFT*simSettings.nSymbol;
 % lenOFDM = 10230;
 
 % 初始化卡尔曼滤波器
-kf.x = [codePhase; fp; carrPhase; fi];  % 初始状态 [码相位; 码频率; 载波相位; 载波频率]
+kf.x = [0; fp; 0; fi];  % 初始状态 [码相位; 码频率; 载波相位; 载波频率]
 kf.P = diag([1e-2, 1e-4, 1e-2, 1e-4]);  % 初始协方差矩阵
 kf.Q = diag([1e-6, 1e-8, 1e-6, 1e-8]);  % 过程噪声协方差
 kf.R = diag([1e-2, 1e-2]);  % 测量噪声协方差
