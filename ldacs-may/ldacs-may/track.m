@@ -1,5 +1,5 @@
- function [output]=track(simSettings, yr, yi)
-% 跟踪环路
+function [output]=track(simSettings, yr, yi)
+% 跟踪环路 - 使用卡尔曼滤波器对跟踪结果进行纠正
 
 % 添加 kalman_filters 函数的路径
 addpath('ldacs-may/ldacs-may');
@@ -16,12 +16,13 @@ t0 = 0:dt:t_sim;
 lenOFDM = simSettings.NFFT*simSettings.nSymbol;
 % lenOFDM = 10230;
 
-% 初始化卡尔曼滤波器（优化参数设置）
-kf.x = [0; 0; 0; 0];  % 初始误差状态 [码相位误差; 码频率误差; 载波相位误差; 载波频率误差]
-kf.P = diag([1e-1, 1e-3, 1e-1, 1e-3]);  % 扩大初始协方差
-kf.Q = diag([1e-7, 1e-9, 1e-7, 1e-9]);  % 调整过程噪声
-kf.R = diag([5e-2, 5e-2]);              % 增加测量噪声
-kf.H = [1 0.1 0 0;   % 改进测量矩阵
+% 初始化卡尔曼滤波器
+% 状态向量 x = [码相位误差; 码频率误差; 载波相位误差; 载波频率误差]
+kf.x = [0; 0; 0; 0];  % 初始误差状态
+kf.P = diag([1e-1, 1e-3, 1e-1, 1e-3]);  % 初始协方差矩阵
+kf.Q = diag([1e-7, 1e-9, 1e-7, 1e-9]);  % 过程噪声协方差
+kf.R = diag([5e-2, 5e-2]);              % 测量噪声协方差
+kf.H = [1 0.1 0 0;   % 测量矩阵，包含频率误差对相位的影响
         0 0 1 0.1];  % 增加频率误差耦合项
 
 % 初始化不同类型的卡尔曼滤波器
@@ -234,60 +235,97 @@ for loopCnt=1:size(t0,2)
     codeFreq = fp - codeNco;
     % codeFreq = fp;
 
+    % 保存原始跟踪结果（未经卡尔曼滤波器修正）
+    original_codePhase = codePhase;
+    original_codeFreq = codeFreq;
+    original_carrPhase = carrPhase;
+    original_carrFreq = carrFreq;
+    
     % 使用不同类型的卡尔曼滤波器
+    % 测量值为当前的码相位和载波相位
     z = [codePhase; carrPhase];
     
+    % 运行三种卡尔曼滤波器
     kf_standard = kalman_filters('standard', kf_standard, z, dt);
     kf_extended = kalman_filters('extended', kf_extended, z, dt);
     kf_unscented = kalman_filters('unscented', kf_unscented, z, dt);
     
-    % 应用误差校正
-    codePhase = codePhase + kf_standard.x(1);  % 修正码相位
-    codeFreq = codeFreq + kf_standard.x(2);    % 修正码频率
-    carrPhase = carrPhase + kf_standard.x(3);  % 修正载波相位
-    carrFreq = carrFreq + kf_standard.x(4);    % 修正载波频率
+    % 应用标准卡尔曼滤波器的误差校正
+    % 卡尔曼滤波器的状态向量 x 表示误差估计
+    % 将估计的误差应用于原始跟踪结果，得到校正后的结果
+    std_codePhase = original_codePhase - kf_standard.x(1);
+    std_codeFreq = original_codeFreq - kf_standard.x(2);
+    std_carrPhase = original_carrPhase - kf_standard.x(3);
+    std_carrFreq = original_carrFreq - kf_standard.x(4);
     
-    % 重置误差估计（保留10%残余误差）
-    kf_standard.x(1:4) = kf_standard.x(1:4) * 0.1;
+    % 应用扩展卡尔曼滤波器的误差校正
+    ext_codePhase = original_codePhase - kf_extended.x(1);
+    ext_codeFreq = original_codeFreq - kf_extended.x(2);
+    ext_carrPhase = original_carrPhase - kf_extended.x(3);
+    ext_carrFreq = original_carrFreq - kf_extended.x(4);
     
-    % 保存不同卡尔曼滤波器的结果
-    output.KF_Standard_CodePhase(loopCnt) = kf_standard.x(1);
-    output.KF_Standard_CodeFreq(loopCnt) = kf_standard.x(2);
-    output.KF_Standard_CarrPhase(loopCnt) = kf_standard.x(3);
-    output.KF_Standard_CarrFreq(loopCnt) = kf_standard.x(4);
+    % 应用无迹卡尔曼滤波器的误差校正
+    ukf_codePhase = original_codePhase - kf_unscented.x(1);
+    ukf_codeFreq = original_codeFreq - kf_unscented.x(2);
+    ukf_carrPhase = original_carrPhase - kf_unscented.x(3);
+    ukf_carrFreq = original_carrFreq - kf_unscented.x(4);
     
-    output.KF_Extended_CodePhase(loopCnt) = kf_extended.x(1);
-    output.KF_Extended_CodeFreq(loopCnt) = kf_extended.x(2);
-    output.KF_Extended_CarrPhase(loopCnt) = kf_extended.x(3);
-    output.KF_Extended_CarrFreq(loopCnt) = kf_extended.x(4);
+    % 保存不同卡尔曼滤波器的状态和修正后的结果
+    % 标准卡尔曼滤波器
+    output.KF_Standard_CodePhase(loopCnt) = std_codePhase;
+    output.KF_Standard_CodeFreq(loopCnt) = std_codeFreq;
+    output.KF_Standard_CarrPhase(loopCnt) = std_carrPhase;
+    output.KF_Standard_CarrFreq(loopCnt) = std_carrFreq;
     
-    output.KF_Unscented_CodePhase(loopCnt) = kf_unscented.x(1);
-    output.KF_Unscented_CodeFreq(loopCnt) = kf_unscented.x(2);
-    output.KF_Unscented_CarrPhase(loopCnt) = kf_unscented.x(3);
-    output.KF_Unscented_CarrFreq(loopCnt) = kf_unscented.x(4);
+    % 扩展卡尔曼滤波器
+    output.KF_Extended_CodePhase(loopCnt) = ext_codePhase;
+    output.KF_Extended_CodeFreq(loopCnt) = ext_codeFreq;
+    output.KF_Extended_CarrPhase(loopCnt) = ext_carrPhase;
+    output.KF_Extended_CarrFreq(loopCnt) = ext_carrFreq;
+    
+    % 无迹卡尔曼滤波器
+    output.KF_Unscented_CodePhase(loopCnt) = ukf_codePhase;
+    output.KF_Unscented_CodeFreq(loopCnt) = ukf_codeFreq;
+    output.KF_Unscented_CarrPhase(loopCnt) = ukf_carrPhase;
+    output.KF_Unscented_CarrFreq(loopCnt) = ukf_carrFreq;
+    
+    % 保存卡尔曼滤波器的误差估计值
+    output.KF_Standard_Error_CodePhase(loopCnt) = kf_standard.x(1);
+    output.KF_Standard_Error_CodeFreq(loopCnt) = kf_standard.x(2);
+    output.KF_Standard_Error_CarrPhase(loopCnt) = kf_standard.x(3);
+    output.KF_Standard_Error_CarrFreq(loopCnt) = kf_standard.x(4);
+    
+    output.KF_Extended_Error_CodePhase(loopCnt) = kf_extended.x(1);
+    output.KF_Extended_Error_CodeFreq(loopCnt) = kf_extended.x(2);
+    output.KF_Extended_Error_CarrPhase(loopCnt) = kf_extended.x(3);
+    output.KF_Extended_Error_CarrFreq(loopCnt) = kf_extended.x(4);
+    
+    output.KF_Unscented_Error_CodePhase(loopCnt) = kf_unscented.x(1);
+    output.KF_Unscented_Error_CodeFreq(loopCnt) = kf_unscented.x(2);
+    output.KF_Unscented_Error_CarrPhase(loopCnt) = kf_unscented.x(3);
+    output.KF_Unscented_Error_CarrFreq(loopCnt) = kf_unscented.x(4);
 
-    output.OutCarrFreq(loopCnt)=carrFreq;
-    output.OutCodeFreq(loopCnt)=codeFreq;
-    output.OutCarrPhase(loopCnt)=carrPhase;
-    output.OutCodePhase(loopCnt)=codePhase;
-    output.OutCarrNCO(loopCnt)=carrError;
-    output.OutCodeNCO(loopCnt)=codeError;
-    output.OutBlksize(loopCnt)=blksize;
-    output.OutRemCode(loopCnt)=remCodePhase;
-    output.I_E(loopCnt)=I_E;
-    output.Q_E(loopCnt)=Q_E;
-    output.I_P(loopCnt)=I_P;
-    output.Q_P(loopCnt)=Q_P;
-    output.I_L(loopCnt)=I_L;
-    output.Q_L(loopCnt)=Q_L;
-    
-    % 添加卡尔曼滤波器的结果到输出
-    output.KF_CodePhase(loopCnt) = kf_codePhase;
-    output.KF_CodeFreq(loopCnt) = kf_codeFreq;
-    output.KF_CarrPhase(loopCnt) = kf_carrPhase;
-    output.KF_CarrFreq(loopCnt) = kf_carrFreq;
+    % 保存原始跟踪结果
+    output.OutCarrFreq(loopCnt) = original_carrFreq;
+    output.OutCodeFreq(loopCnt) = original_codeFreq;
+    output.OutCarrPhase(loopCnt) = original_carrPhase;
+    output.OutCodePhase(loopCnt) = original_codePhase;
+    output.OutCarrNCO(loopCnt) = carrError;
+    output.OutCodeNCO(loopCnt) = codeError;
+    output.OutBlksize(loopCnt) = blksize;
+    output.OutRemCode(loopCnt) = remCodePhase;
+    output.I_E(loopCnt) = I_E;
+    output.Q_E(loopCnt) = Q_E;
+    output.I_P(loopCnt) = I_P;
+    output.Q_P(loopCnt) = Q_P;
+    output.I_L(loopCnt) = I_L;
+    output.Q_L(loopCnt) = Q_L;
 end
 
 % 添加卡尔曼滤波器的最终状态到输出
-output.KF_FinalState = kf.x;
-output.KF_FinalCovariance = kf.P;
+output.KF_Standard_FinalState = kf_standard.x;
+output.KF_Standard_FinalCovariance = kf_standard.P;
+output.KF_Extended_FinalState = kf_extended.x;
+output.KF_Extended_FinalCovariance = kf_extended.P;
+output.KF_Unscented_FinalState = kf_unscented.x;
+output.KF_Unscented_FinalCovariance = kf_unscented.P;

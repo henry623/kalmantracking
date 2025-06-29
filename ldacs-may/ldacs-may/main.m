@@ -177,6 +177,46 @@ for i = 1:length(filter_types)
     ylabel('误差 (Hz)');
 end
 
+% 新增：显示卡尔曼滤波器估计的误差
+figure('Color', 'w');
+sgtitle('卡尔曼滤波器估计的误差');
+
+subplot(2,2,1);
+plot(t, output.KF_Standard_Error_CodePhase, 'r', ...
+     t, output.KF_Extended_Error_CodePhase, 'g', ...
+     t, output.KF_Unscented_Error_CodePhase, 'm');
+title('码相位误差估计');
+legend('标准卡尔曼滤波', '扩展卡尔曼滤波', 'UKF');
+xlabel('时间 (s)');
+ylabel('误差估计');
+
+subplot(2,2,2);
+plot(t, output.KF_Standard_Error_CodeFreq, 'r', ...
+     t, output.KF_Extended_Error_CodeFreq, 'g', ...
+     t, output.KF_Unscented_Error_CodeFreq, 'm');
+title('码频率误差估计');
+legend('标准卡尔曼滤波', '扩展卡尔曼滤波', 'UKF');
+xlabel('时间 (s)');
+ylabel('误差估计 (Hz)');
+
+subplot(2,2,3);
+plot(t, output.KF_Standard_Error_CarrPhase, 'r', ...
+     t, output.KF_Extended_Error_CarrPhase, 'g', ...
+     t, output.KF_Unscented_Error_CarrPhase, 'm');
+title('载波相位误差估计');
+legend('标准卡尔曼滤波', '扩展卡尔曼滤波', 'UKF');
+xlabel('时间 (s)');
+ylabel('误差估计');
+
+subplot(2,2,4);
+plot(t, output.KF_Standard_Error_CarrFreq, 'r', ...
+     t, output.KF_Extended_Error_CarrFreq, 'g', ...
+     t, output.KF_Unscented_Error_CarrFreq, 'm');
+title('载波频率误差估计');
+legend('标准卡尔曼滤波', '扩展卡尔曼滤波', 'UKF');
+xlabel('时间 (s)');
+ylabel('误差估计 (Hz)');
+
 % 打印 RMSE 结果
 fprintf('原始跟踪码相位RMSE: %.4f\n', rmse_codePhase);
 fprintf('原始跟踪载波相位RMSE: %.4f\n', rmse_carrPhase);
@@ -206,6 +246,17 @@ for i = 1:length(filter_types)
     fprintf('%s卡尔曼滤波码频率RMSE: %.4f Hz\n', kf_type, rmse_kf_codeFreq);
     fprintf('%s卡尔曼滤波载波频率RMSE: %.4f Hz\n', kf_type, rmse_kf_carrFreq);
     fprintf('%s卡尔曼滤波码相位距离RMSE: %.4f m\n', kf_type, rmse_kf_codePhase_dis);
+    
+    % 计算改进百分比
+    improvement_codePhase = (rmse_codePhase - rmse_kf_codePhase) / rmse_codePhase * 100;
+    improvement_carrPhase = (rmse_carrPhase - rmse_kf_carrPhase) / rmse_carrPhase * 100;
+    improvement_codeFreq = (rmse_codeFreq - rmse_kf_codeFreq) / rmse_codeFreq * 100;
+    improvement_carrFreq = (rmse_carrFreq - rmse_kf_carrFreq) / rmse_carrFreq * 100;
+    
+    fprintf('%s卡尔曼滤波码相位改进: %.2f%%\n', kf_type, improvement_codePhase);
+    fprintf('%s卡尔曼滤波载波相位改进: %.2f%%\n', kf_type, improvement_carrPhase);
+    fprintf('%s卡尔曼滤波码频率改进: %.2f%%\n', kf_type, improvement_codeFreq);
+    fprintf('%s卡尔曼滤波载波频率改进: %.2f%%\n', kf_type, improvement_carrFreq);
 end
 
 % 绘图函数定义
