@@ -16,12 +16,13 @@ t0 = 0:dt:t_sim;
 lenOFDM = simSettings.NFFT*simSettings.nSymbol;
 % lenOFDM = 10230;
 
-% 初始化卡尔曼滤波器
-kf.x = [0; fp; 0; fi];  % 初始状态 [码相位; 码频率; 载波相位; 载波频率]
-kf.P = diag([1e-2, 1e-4, 1e-2, 1e-4]);  % 初始协方差矩阵
-kf.Q = diag([1e-6, 1e-8, 1e-6, 1e-8]);  % 过程噪声协方差
-kf.R = diag([1e-2, 1e-2]);  % 测量噪声协方差
-kf.H = [1 0 0 0; 0 0 1 0];  % 测量矩阵
+% 初始化卡尔曼滤波器（优化参数设置）
+kf.x = [0; 0; 0; 0];  % 初始误差状态 [码相位误差; 码频率误差; 载波相位误差; 载波频率误差]
+kf.P = diag([1e-1, 1e-3, 1e-1, 1e-3]);  % 扩大初始协方差
+kf.Q = diag([1e-7, 1e-9, 1e-7, 1e-9]);  % 调整过程噪声
+kf.R = diag([5e-2, 5e-2]);              % 增加测量噪声
+kf.H = [1 0.1 0 0;   % 改进测量矩阵
+        0 0 1 0.1];  % 增加频率误差耦合项
 
 % 初始化不同类型的卡尔曼滤波器
 kf_standard = kf;
@@ -240,11 +241,14 @@ for loopCnt=1:size(t0,2)
     kf_extended = kalman_filters('extended', kf_extended, z, dt);
     kf_unscented = kalman_filters('unscented', kf_unscented, z, dt);
     
-    % 使用标准卡尔曼滤波器的估计结果
-    kf_codePhase = kf_standard.x(1);
-    kf_codeFreq = kf_standard.x(2);
-    kf_carrPhase = kf_standard.x(3);
-    kf_carrFreq = kf_standard.x(4);
+    % 应用误差校正
+    codePhase = codePhase + kf_standard.x(1);  % 修正码相位
+    codeFreq = codeFreq + kf_standard.x(2);    % 修正码频率
+    carrPhase = carrPhase + kf_standard.x(3);  % 修正载波相位
+    carrFreq = carrFreq + kf_standard.x(4);    % 修正载波频率
+    
+    % 重置误差估计（保留10%残余误差）
+    kf_standard.x(1:4) = kf_standard.x(1:4) * 0.1;
     
     % 保存不同卡尔曼滤波器的结果
     output.KF_Standard_CodePhase(loopCnt) = kf_standard.x(1);

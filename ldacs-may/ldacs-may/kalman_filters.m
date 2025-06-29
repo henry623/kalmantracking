@@ -46,7 +46,7 @@ function [kf_output] = extended_kf(kf, z, dt)
 end
 
 function [kf_output] = unscented_kf(kf, z, dt)
-    n = 4;  % 状态维度
+    n = 4;  % 状态维度（4种误差）
     alpha = 1e-3;
     kappa = 0;
     beta = 2;
@@ -57,11 +57,15 @@ function [kf_output] = unscented_kf(kf, z, dt)
     Wc = Wm;
     Wc(1) = Wc(1) + (1 - alpha^2 + beta);
     
-    % 预测步骤
-    kf.F = [1 dt 0 0; 0 1 0 0; 0 0 1 dt; 0 0 0 1];
+    % 预测步骤 - 误差传播
+    kf.F = [1 dt      0  0;
+            0  1      0  0;
+            0  0    1 dt;
+            0  0      0  1];
+            
     X = sqrtm((n + lambda) * kf.P);
     X = [zeros(n, 1), X, -X];
-    X = kf.x + X;
+    X = kf.x + X;  % 生成sigma点
     
     % 传播 sigma 点
     X = kf.F * X;
