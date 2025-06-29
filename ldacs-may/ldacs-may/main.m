@@ -130,6 +130,53 @@ legend('原始跟踪', '标准卡尔曼滤波', '扩展卡尔曼滤波', 'UKF');
 xlabel('时间 (s)');
 ylabel('载波频率误差');
 
+% 新增：分别展示原始跟踪和三种卡尔曼滤波器的跟踪误差结果
+filter_types = {'Original', 'Standard', 'Extended', 'Unscented'};
+for i = 1:length(filter_types)
+    figure('Color', 'w');
+    sgtitle([filter_types{i} ' 跟踪误差结果']);
+    
+    subplot(2,2,1);
+    if i == 1
+        plot(t, code_phase_error);
+    else
+        plot(t, output.(['KF_' filter_types{i} '_CodePhase']) - ideal_codePhase);
+    end
+    title('码相位误差');
+    xlabel('时间 (s)');
+    ylabel('误差');
+    
+    subplot(2,2,2);
+    if i == 1
+        plot(t, code_freq_error);
+    else
+        plot(t, output.(['KF_' filter_types{i} '_CodeFreq']) - ideal_codeFreq);
+    end
+    title('码频率误差');
+    xlabel('时间 (s)');
+    ylabel('误差 (Hz)');
+    
+    subplot(2,2,3);
+    if i == 1
+        plot(t, carr_phase_error);
+    else
+        plot(t, output.(['KF_' filter_types{i} '_CarrPhase']) - ideal_carrPhase);
+    end
+    title('载波相位误差');
+    xlabel('时间 (s)');
+    ylabel('误差');
+    
+    subplot(2,2,4);
+    if i == 1
+        plot(t, carr_freq_error);
+    else
+        plot(t, output.(['KF_' filter_types{i} '_CarrFreq']) - ideal_carrFreq);
+    end
+    title('载波频率误差');
+    xlabel('时间 (s)');
+    ylabel('误差 (Hz)');
+end
+
 % 打印 RMSE 结果
 fprintf('原始跟踪码相位RMSE: %.4f\n', rmse_codePhase);
 fprintf('原始跟踪载波相位RMSE: %.4f\n', rmse_carrPhase);
