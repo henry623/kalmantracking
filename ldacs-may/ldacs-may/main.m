@@ -2,52 +2,53 @@
 clear all; close all;
 
 % 读取参数
-SNR = -20;
+SNR = -20; % 设置当前仿真的信噪比
 simSettings = init(SNR); % 设置参数
-flag = 1; % 要不要重新生成
+flag = 1; % 要不要重新生成信号
 
+% 生成信号
 [grid, rawSignal] = generateCrossOFDM(simSettings); % 资源网格，行是时间，列是频率
-
 yr0 = real(rawSignal); % 实部信号
 yi0 = imag(rawSignal); % 虚部信号
-
-yr0=interpo(yr0,simSettings.famp); % 实部时域采样结果
-yi0=interpo(yi0,simSettings.famp); % 虚部时域采样结果
-
+yr0 = interpo(yr0, simSettings.famp); % 实部时域采样结果
+yi0 = interpo(yi0, simSettings.famp); % 虚部时域采样结果
 yr0 = [yr0(:,end-simSettings.extra*simSettings.famp+1:end) yr0 yr0(:,1:1+simSettings.extra*simSettings.famp)];
 yi0 = [yi0(:,end-simSettings.extra*simSettings.famp+1:end) yi0 yi0(:,1:1+simSettings.extra*simSettings.famp)];
 
-if flag==1
-    for bandID=1:simSettings.numBand
+% 生成或加载信号
+if flag == 1
+    for bandID = 1:simSettings.numBand
         yr = yr0(bandID,:);
         yi = yi0(bandID,:);
         record_E(:,:,bandID) = generateSignal(simSettings, yr, yi);
     end
-    filenm1 = ['output/signal_SNR'  num2str(SNR) '.mat' ];
-    save(filenm1,'record_E');
+    filenm1 = ['output/signal_SNR'  num2str(SNR) '.mat'];
+    save(filenm1, 'record_E');
 else
-    load(['output/signal_SNR'  num2str(SNR) '.mat' ]);
+    load(['output/signal_SNR'  num2str(SNR) '.mat']);
 end
 
+% 跟踪信号
 output = track(simSettings, yr0, yi0);
-savenm=['output/tracked_SNR'  num2str(SNR) '.mat'];
-save(savenm,'output');
+savenm = ['output/tracked_SNR'  num2str(SNR) '.mat'];
+save(savenm, 'output');
 
-% 生成理想的码相位和载波相位
-t = 0:simSettings.dt:simSettings.t_total-simSettings.dt;
-ideal_codePhase = mod(simSettings.fp * t, simSettings.Lc);
-ideal_carrPhase = mod(simSettings.fi * t, 2*pi);
+% 加载理想跟踪结果（SNR = inf 的情况）
+load("output/tracked_SNRinf.mat");
+ideal_codePhase = output.OutCodePhase;
+ideal_carrPhase = output.OutCarrPhase;
+ideal_codeFreq = output.OutCodeFreq;
+ideal_carrFreq = output.OutCarrFreq;
 
-% load("output/tracked_SNRinf.mat");
-% codePhase0 = output.OutCodePhase;
-% carrPhase0 = output.OutCarrPhase;
-% codeFreq0 = output.OutCodeFreq;
-loadnm = ['output/tracked_SNR'  num2str(SNR) '.mat' ];
+% 加载当前 SNR 的跟踪结果
+loadnm = ['output/tracked_SNR'  num2str(SNR) '.mat'];
 load(loadnm);
 codePhase = output.OutCodePhase;
 carrPhase = output.OutCarrPhase;
 codeFreq = output.OutCodeFreq;
+carrFreq = output.OutCarrFreq;
 
+% 提取相关数据
 I_E = output.I_E;
 Q_E = output.Q_E;
 I_P = output.I_P;
@@ -55,74 +56,53 @@ Q_P = output.Q_P;
 I_L = output.I_L;
 Q_L = output.Q_L;
 
-% 计算各通道的幅度：sqrt(I² + Q²)
+% 计算各通道的幅度
 Amp_E = sqrt(I_E.^2 + Q_E.^2); % 早（Early）通道幅度
 Amp_P = sqrt(I_P.^2 + Q_P.^2); % 准时（Prompt）通道幅度
 Amp_L = sqrt(I_L.^2 + Q_L.^2); % 晚（Late）通道幅度
 
-% 创建时间轴（假设数据为时间序列，若无时间信息可用样本索引代替）
-num_samples = length(Amp_E);% 获取数据长度
-t = 1:num_samples;             % 样本索引
+% 创建时间轴
+num_samples = length(Amp_E);
+t = 1:num_samples;
 
-% 创建一个新的图形窗口，背景颜色为白色
-figure('Color', 'w');
-plot(t,I_P);
-xlabel('t');
-ylabel('I prompt');
-title('Bits of the navigation message');
-
-% 创建一个新的图形窗口，背景颜色为白色
-figure('Color', 'w');
-% 绘制 I_P 和 Q_P 的散点图
-plot(I_P, Q_P, '.');  % 使用 '.' 来绘制点的散点图
-xlabel('I prompt');
-ylabel('Q prompt');
-title('Discrete-Time Scatter Plot');
-axis equal;
-
-% 创建新图形窗口
-figure('Color', 'w');            % 白色背景窗口
-hold on;                         % 保持绘图状态
-% 绘制三条通道幅度曲线
-plot(t , Amp_E, 'r-', 'LineWidth', 1.5, 'DisplayName', 'Early');
-plot(t , Amp_P, 'g-', 'LineWidth', 1.5, 'DisplayName', 'Prompt');
-plot(t , Amp_L, 'b-', 'LineWidth', 1.5, 'DisplayName', 'Late');
-% 添加图形标注
-grid on;                         % 显示网格
-xlabel('Sample Index');          % 横轴标签
-ylabel('Amplitude');             % 纵轴标签
-title('Correlation');             % 图形标题
-legend('show', 'Location', 'best'); % 显示图例（自动选择最佳位置）
-hold off;                        % 释放绘图状态
-
-figure();
-c = simSettings.c;
-Ts = simSettings.Ts;
-% 计算相位误差
+% 计算相位误差和频率误差
 code_phase_error = codePhase - ideal_codePhase;
 carr_phase_error = carrPhase - ideal_carrPhase;
+code_freq_error = codeFreq - ideal_codeFreq;
+carr_freq_error = carrFreq - ideal_carrFreq;
 
-figure();
-plot(t, code_phase_error);
-title('Code Phase Error');
-xlabel('Time (s)');
-ylabel('Phase Error');
-
-figure();
-plot(codeFreq-simSettings.fp,'r-', 'LineWidth', 1.5, 'DisplayName', num2str(SNR)); 
-hold on; 
-plot(codeFreq0-simSettings.fp,'b-', 'LineWidth', 1.5, 'DisplayName', 'inf');
-legend('show', 'Location', 'best');
-title('Code Frequency Deviation');
-xlabel('Sample Index');
-ylabel('Frequency Deviation (Hz)');
-
+% 计算 RMSE
 rmse_codePhase = sqrt(mean(code_phase_error.^2));
+rmse_carrPhase = sqrt(mean(carr_phase_error.^2));
+rmse_codeFreq = sqrt(mean(code_freq_error.^2));
+rmse_carrFreq = sqrt(mean(carr_freq_error.^2));
+
 rmse_codePhase_dis = simSettings.Ts * simSettings.c * rmse_codePhase;
 
+% 绘图函数
+function plot_results(t, data, title_str, xlabel_str, ylabel_str, legend_str)
+    figure('Color', 'w');
+    plot(t, data, 'LineWidth', 1.5);
+    title(title_str);
+    xlabel(xlabel_str);
+    ylabel(ylabel_str);
+    if ~isempty(legend_str)
+        legend(legend_str, 'Location', 'best');
+    end
+    grid on;
+end
+
+% 绘制结果
+plot_results(t, I_P, 'Bits of the navigation message', 't', 'I prompt', []);
+plot_results(t, [Amp_E; Amp_P; Amp_L], 'Correlation', 'Sample Index', 'Amplitude', {'Early', 'Prompt', 'Late'});
+plot_results(t, code_phase_error, 'Code Phase Error', 'Time (s)', 'Phase Error', []);
+plot_results(t, carr_phase_error, 'Carrier Phase Error', 'Time (s)', 'Phase Error', []);
+plot_results(t, code_freq_error, 'Code Frequency Error', 'Time (s)', 'Frequency Error (Hz)', []);
+plot_results(t, carr_freq_error, 'Carrier Frequency Error', 'Time (s)', 'Frequency Error (Hz)', []);
+
 % 比较原始跟踪结果和不同卡尔曼滤波器改进后的结果
-figure;
-subplot(2,1,1);
+figure('Color', 'w');
+subplot(2,2,1);
 plot(t, code_phase_error, 'b', ...
      t, output.KF_Standard_CodePhase - ideal_codePhase, 'r', ...
      t, output.KF_Extended_CodePhase - ideal_codePhase, 'g', ...
@@ -132,7 +112,7 @@ legend('原始跟踪', '标准卡尔曼滤波', '扩展卡尔曼滤波', 'UKF');
 xlabel('时间 (s)');
 ylabel('码相位误差');
 
-subplot(2,1,2);
+subplot(2,2,2);
 plot(t, carr_phase_error, 'b', ...
      t, output.KF_Standard_CarrPhase - ideal_carrPhase, 'r', ...
      t, output.KF_Extended_CarrPhase - ideal_carrPhase, 'g', ...
@@ -142,62 +122,53 @@ legend('原始跟踪', '标准卡尔曼滤波', '扩展卡尔曼滤波', 'UKF');
 xlabel('时间 (s)');
 ylabel('载波相位误差');
 
-% 计算不同卡尔曼滤波器改进后的RMSE
-kalman_standard_diff = output.KF_Standard_CodePhase - ideal_codePhase;
-kalman_extended_diff = output.KF_Extended_CodePhase - ideal_codePhase;
-kalman_unscented_diff = output.KF_Unscented_CodePhase - ideal_codePhase;
+subplot(2,2,3);
+plot(t, code_freq_error, 'b', ...
+     t, output.KF_Standard_CodeFreq - ideal_codeFreq, 'r', ...
+     t, output.KF_Extended_CodeFreq - ideal_codeFreq, 'g', ...
+     t, output.KF_Unscented_CodeFreq - ideal_codeFreq, 'm');
+title('码频率误差比较');
+legend('原始跟踪', '标准卡尔曼滤波', '扩展卡尔曼滤波', 'UKF');
+xlabel('时间 (s)');
+ylabel('码频率误差');
 
-kalman_standard_diff = kalman_standard_diff(200:end);
-kalman_extended_diff = kalman_extended_diff(200:end);
-kalman_unscented_diff = kalman_unscented_diff(200:end);
+subplot(2,2,4);
+plot(t, carr_freq_error, 'b', ...
+     t, output.KF_Standard_CarrFreq - ideal_carrFreq, 'r', ...
+     t, output.KF_Extended_CarrFreq - ideal_carrFreq, 'g', ...
+     t, output.KF_Unscented_CarrFreq - ideal_carrFreq, 'm');
+title('载波频率误差比较');
+legend('原始跟踪', '标准卡尔曼滤波', '扩展卡尔曼滤波', 'UKF');
+xlabel('时间 (s)');
+ylabel('载波频率误差');
 
-rmse_kalman_standard = sqrt(mean(kalman_standard_diff.^2));
-rmse_kalman_extended = sqrt(mean(kalman_extended_diff.^2));
-rmse_kalman_unscented = sqrt(mean(kalman_unscented_diff.^2));
-
-rmse_kalman_standard_dis = simSettings.Ts * simSettings.c * rmse_kalman_standard;
-rmse_kalman_extended_dis = simSettings.Ts * simSettings.c * rmse_kalman_extended;
-rmse_kalman_unscented_dis = simSettings.Ts * simSettings.c * rmse_kalman_unscented;
-
+% 打印 RMSE 结果
 fprintf('原始跟踪码相位RMSE: %.4f\n', rmse_codePhase);
-fprintf('标准卡尔曼滤波码相位RMSE: %.4f\n', rmse_kalman_standard);
-fprintf('扩展卡尔曼滤波码相位RMSE: %.4f\n', rmse_kalman_extended);
-fprintf('UKF码相位RMSE: %.4f\n', rmse_kalman_unscented);
+fprintf('原始跟踪载波相位RMSE: %.4f\n', rmse_carrPhase);
+fprintf('原始跟踪码频率RMSE: %.4f Hz\n', rmse_codeFreq);
+fprintf('原始跟踪载波频率RMSE: %.4f Hz\n', rmse_carrFreq);
 fprintf('原始跟踪码相位距离RMSE: %.4f m\n', rmse_codePhase_dis);
-fprintf('标准卡尔曼滤波码相位距离RMSE: %.4f m\n', rmse_kalman_standard_dis);
-fprintf('扩展卡尔曼滤波码相位距离RMSE: %.4f m\n', rmse_kalman_extended_dis);
-fprintf('UKF码相位距离RMSE: %.4f m\n', rmse_kalman_unscented_dis);
 
-% 绘制I路bits of navigation message
-figure;
-plot(t, output.I_P, 'b');
-title('I路bits of navigation message');
-xlabel('时间 (s)');
-ylabel('幅度');
-xlim([0, max(t)]); % 显示全部范围
-
-% 绘制码频率偏差
-figure;
-plot(t, codeFreq - simSettings.fp, 'b-', 'LineWidth', 1.5, 'DisplayName', '原始跟踪');
-hold on;
-plot(t, output.KF_Standard_CodeFreq - simSettings.fp, 'r-', 'LineWidth', 1.5, 'DisplayName', '标准卡尔曼滤波');
-plot(t, output.KF_Extended_CodeFreq - simSettings.fp, 'g-', 'LineWidth', 1.5, 'DisplayName', '扩展卡尔曼滤波');
-plot(t, output.KF_Unscented_CodeFreq - simSettings.fp, 'm-', 'LineWidth', 1.5, 'DisplayName', 'UKF');
-title('码频率偏差');
-legend('show', 'Location', 'best');
-xlabel('时间 (s)');
-ylabel('频率偏差 (Hz)');
-xlim([0, max(t)]); % 显示全部范围
-
-% 绘制码相位误差
-figure;
-plot(t, code_phase_error, 'b-', 'LineWidth', 1.5, 'DisplayName', '原始跟踪');
-hold on;
-plot(t, output.KF_Standard_CodePhase - ideal_codePhase, 'r-', 'LineWidth', 1.5, 'DisplayName', '标准卡尔曼滤波');
-plot(t, output.KF_Extended_CodePhase - ideal_codePhase, 'g-', 'LineWidth', 1.5, 'DisplayName', '扩展卡尔曼滤波');
-plot(t, output.KF_Unscented_CodePhase - ideal_codePhase, 'm-', 'LineWidth', 1.5, 'DisplayName', 'UKF');
-title('码相位误差');
-legend('show', 'Location', 'best');
-xlabel('时间 (s)');
-ylabel('相位误差');
-xlim([0, max(t)]); % 显示全部范围
+% 计算并打印卡尔曼滤波器的 RMSE
+filter_types = {'Standard', 'Extended', 'Unscented'};
+for i = 1:length(filter_types)
+    kf_type = filter_types{i};
+    
+    kf_codePhase_diff = output.(['KF_' kf_type '_CodePhase']) - ideal_codePhase;
+    kf_carrPhase_diff = output.(['KF_' kf_type '_CarrPhase']) - ideal_carrPhase;
+    kf_codeFreq_diff = output.(['KF_' kf_type '_CodeFreq']) - ideal_codeFreq;
+    kf_carrFreq_diff = output.(['KF_' kf_type '_CarrFreq']) - ideal_carrFreq;
+    
+    rmse_kf_codePhase = sqrt(mean(kf_codePhase_diff.^2));
+    rmse_kf_carrPhase = sqrt(mean(kf_carrPhase_diff.^2));
+    rmse_kf_codeFreq = sqrt(mean(kf_codeFreq_diff.^2));
+    rmse_kf_carrFreq = sqrt(mean(kf_carrFreq_diff.^2));
+    
+    rmse_kf_codePhase_dis = simSettings.Ts * simSettings.c * rmse_kf_codePhase;
+    
+    fprintf('%s卡尔曼滤波码相位RMSE: %.4f\n', kf_type, rmse_kf_codePhase);
+    fprintf('%s卡尔曼滤波载波相位RMSE: %.4f\n', kf_type, rmse_kf_carrPhase);
+    fprintf('%s卡尔曼滤波码频率RMSE: %.4f Hz\n', kf_type, rmse_kf_codeFreq);
+    fprintf('%s卡尔曼滤波载波频率RMSE: %.4f Hz\n', kf_type, rmse_kf_carrFreq);
+    fprintf('%s卡尔曼滤波码相位距离RMSE: %.4f m\n', kf_type, rmse_kf_codePhase_dis);
+end
