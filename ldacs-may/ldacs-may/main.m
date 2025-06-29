@@ -71,26 +71,14 @@ carr_phase_error = carrPhase - ideal_carrPhase;
 code_freq_error = codeFreq - ideal_codeFreq;
 carr_freq_error = carrFreq - ideal_carrFreq;
 
-% 计算 RMSE
-rmse_codePhase = sqrt(mean(code_phase_error.^2));
-rmse_carrPhase = sqrt(mean(carr_phase_error.^2));
-rmse_codeFreq = sqrt(mean(code_freq_error.^2));
-rmse_carrFreq = sqrt(mean(carr_freq_error.^2));
+% 计算 RMSE（从第200个周期开始）
+start_index = 200;
+rmse_codePhase = sqrt(mean(code_phase_error(start_index:end).^2));
+rmse_carrPhase = sqrt(mean(carr_phase_error(start_index:end).^2));
+rmse_codeFreq = sqrt(mean(code_freq_error(start_index:end).^2));
+rmse_carrFreq = sqrt(mean(carr_freq_error(start_index:end).^2));
 
 rmse_codePhase_dis = simSettings.Ts * simSettings.c * rmse_codePhase;
-
-% 绘图函数
-function plot_results(t, data, title_str, xlabel_str, ylabel_str, legend_str)
-    figure('Color', 'w');
-    plot(t, data, 'LineWidth', 1.5);
-    title(title_str);
-    xlabel(xlabel_str);
-    ylabel(ylabel_str);
-    if ~isempty(legend_str)
-        legend(legend_str, 'Location', 'best');
-    end
-    grid on;
-end
 
 % 绘制结果
 plot_results(t, I_P, 'Bits of the navigation message', 't', 'I prompt', []);
@@ -159,10 +147,10 @@ for i = 1:length(filter_types)
     kf_codeFreq_diff = output.(['KF_' kf_type '_CodeFreq']) - ideal_codeFreq;
     kf_carrFreq_diff = output.(['KF_' kf_type '_CarrFreq']) - ideal_carrFreq;
     
-    rmse_kf_codePhase = sqrt(mean(kf_codePhase_diff.^2));
-    rmse_kf_carrPhase = sqrt(mean(kf_carrPhase_diff.^2));
-    rmse_kf_codeFreq = sqrt(mean(kf_codeFreq_diff.^2));
-    rmse_kf_carrFreq = sqrt(mean(kf_carrFreq_diff.^2));
+    rmse_kf_codePhase = sqrt(mean(kf_codePhase_diff(start_index:end).^2));
+    rmse_kf_carrPhase = sqrt(mean(kf_carrPhase_diff(start_index:end).^2));
+    rmse_kf_codeFreq = sqrt(mean(kf_codeFreq_diff(start_index:end).^2));
+    rmse_kf_carrFreq = sqrt(mean(kf_carrFreq_diff(start_index:end).^2));
     
     rmse_kf_codePhase_dis = simSettings.Ts * simSettings.c * rmse_kf_codePhase;
     
@@ -171,4 +159,17 @@ for i = 1:length(filter_types)
     fprintf('%s卡尔曼滤波码频率RMSE: %.4f Hz\n', kf_type, rmse_kf_codeFreq);
     fprintf('%s卡尔曼滤波载波频率RMSE: %.4f Hz\n', kf_type, rmse_kf_carrFreq);
     fprintf('%s卡尔曼滤波码相位距离RMSE: %.4f m\n', kf_type, rmse_kf_codePhase_dis);
+end
+
+% 绘图函数定义
+function plot_results(t, data, title_str, xlabel_str, ylabel_str, legend_str)
+    figure('Color', 'w');
+    plot(t, data, 'LineWidth', 1.5);
+    title(title_str);
+    xlabel(xlabel_str);
+    ylabel(ylabel_str);
+    if ~isempty(legend_str)
+        legend(legend_str, 'Location', 'best');
+    end
+    grid on;
 end
