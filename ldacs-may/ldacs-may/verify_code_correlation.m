@@ -31,7 +31,7 @@ simSettings.code = code;
 fprintf('分析PRN %d的自相关特性...\n', prn_idx);
 
 % 生成OFDM调制后的信号
-[grid, rawSignal] = generateCrossOFDM(simSettings);
+[resource_grid, rawSignal] = generateCrossOFDM(simSettings);
 yr0 = real(rawSignal);
 yi0 = imag(rawSignal);
 yr0 = interpo(yr0, simSettings.famp);

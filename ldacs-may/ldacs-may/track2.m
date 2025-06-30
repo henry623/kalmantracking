@@ -16,12 +16,12 @@ t0 = 0:dt:t_sim;
 lenOFDM = simSettings.NFFT*simSettings.nSymbol;
 
 % 初始化卡尔曼滤波器
-% 状态变量：[码相位误差; 码频率误差; 载波相位误差; 载波频率误差]
+% 状态变量：[载波频率误差; 载波相位误差; 码频率误差; 码相位误差]
 kf.x = [0; 0; 0; 0];  % 初始状态都设为0（无误差）
-kf.P = diag([1e-2, 1e-4, 1e-2, 1e-4]);  % 初始协方差矩阵
-kf.Q = diag([1e-6, 1e-8, 1e-6, 1e-8]);  % 过程噪声协方差
+kf.P = diag([1e-4, 1e-2, 1e-4, 1e-2]);  % 初始协方差矩阵
+kf.Q = diag([1e-8, 1e-6, 1e-8, 1e-6]);  % 过程噪声协方差
 kf.R = diag([1e-2, 1e-2]);  % 测量噪声协方差
-kf.H = [1 0 0 0; 0 0 1 0];  % 测量矩阵 - 只测量码相位误差和载波相位误差
+kf.H = [0 1 0 0; 0 0 0 1];  % 测量矩阵 - 只测量载波相位误差和码相位误差
 
 % 初始化不同类型的卡尔曼滤波器
 kf_standard = kf;
@@ -217,12 +217,12 @@ for loopCnt = 1:size(t0,2)
     codeFreq = fp - codeNco;
 
     % 计算当前测量值与理想值之间的误差
-    code_phase_error = codePhase - ideal_codePhase;
     carr_phase_error = carrPhase - ideal_carrPhase;
+    code_phase_error = codePhase - ideal_codePhase;
     
     % 使用不同类型的卡尔曼滤波器
-    z = [code_phase_error; carr_phase_error];  %; carr_phase_error];  % 测量值：码相位误差和载波相位误差
-    ideal_values = [ideal_codePhase; ideal_codeFreq; ideal_carrPhase; ideal_carrFreq];  % 理想值
+    z = [carr_phase_error; code_phase_error];  % 测量值：载波相位误差和码相位误差
+    ideal_values = [ideal_carrFreq; ideal_carrPhase; ideal_codeFreq; ideal_codePhase];  % 理想值
     
     % 使用标准卡尔曼滤波器
     kf_standard = kalman_filters2('standard', kf_standard, z, dt, ideal_values);
@@ -234,20 +234,20 @@ for loopCnt = 1:size(t0,2)
     kf_unscented = kalman_filters2('unscented', kf_unscented, z, dt, ideal_values);
     
     % 保存不同卡尔曼滤波器的结果
-    output.KF_Standard_CodePhase(loopCnt) = kf_standard.corrected_values(1);
-    output.KF_Standard_CodeFreq(loopCnt) = kf_standard.corrected_values(2);
-    output.KF_Standard_CarrPhase(loopCnt) = kf_standard.corrected_values(3);
-    output.KF_Standard_CarrFreq(loopCnt) = kf_standard.corrected_values(4);
+    output.KF_Standard_CarrFreq(loopCnt) = kf_standard.corrected_values(1);
+    output.KF_Standard_CarrPhase(loopCnt) = kf_standard.corrected_values(2);
+    output.KF_Standard_CodeFreq(loopCnt) = kf_standard.corrected_values(3);
+    output.KF_Standard_CodePhase(loopCnt) = kf_standard.corrected_values(4);
     
-    output.KF_Extended_CodePhase(loopCnt) = kf_extended.corrected_values(1);
-    output.KF_Extended_CodeFreq(loopCnt) = kf_extended.corrected_values(2);
-    output.KF_Extended_CarrPhase(loopCnt) = kf_extended.corrected_values(3);
-    output.KF_Extended_CarrFreq(loopCnt) = kf_extended.corrected_values(4);
+    output.KF_Extended_CarrFreq(loopCnt) = kf_extended.corrected_values(1);
+    output.KF_Extended_CarrPhase(loopCnt) = kf_extended.corrected_values(2);
+    output.KF_Extended_CodeFreq(loopCnt) = kf_extended.corrected_values(3);
+    output.KF_Extended_CodePhase(loopCnt) = kf_extended.corrected_values(4);
     
-    output.KF_Unscented_CodePhase(loopCnt) = kf_unscented.corrected_values(1);
-    output.KF_Unscented_CodeFreq(loopCnt) = kf_unscented.corrected_values(2);
-    output.KF_Unscented_CarrPhase(loopCnt) = kf_unscented.corrected_values(3);
-    output.KF_Unscented_CarrFreq(loopCnt) = kf_unscented.corrected_values(4);
+    output.KF_Unscented_CarrFreq(loopCnt) = kf_unscented.corrected_values(1);
+    output.KF_Unscented_CarrPhase(loopCnt) = kf_unscented.corrected_values(2);
+    output.KF_Unscented_CodeFreq(loopCnt) = kf_unscented.corrected_values(3);
+    output.KF_Unscented_CodePhase(loopCnt) = kf_unscented.corrected_values(4);
 
     % 保存原始跟踪结果
     output.OutCarrFreq(loopCnt) = carrFreq;

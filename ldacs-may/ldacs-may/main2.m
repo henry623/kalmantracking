@@ -7,7 +7,7 @@ simSettings = init(SNR); % 设置参数
 flag = 1; % 要不要重新生成信号
 
 % 生成信号
-[grid, rawSignal] = generateCrossOFDM(simSettings); % 资源网格，行是时间，列是频率
+[resource_grid, rawSignal] = generateCrossOFDM(simSettings); % 资源网格，行是时间，列是频率
 yr0 = real(rawSignal); % 实部信号
 yi0 = imag(rawSignal); % 虚部信号
 yr0 = interpo(yr0, simSettings.famp); % 实部时域采样结果

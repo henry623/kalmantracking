@@ -17,13 +17,13 @@ lenOFDM = simSettings.NFFT*simSettings.nSymbol;
 % lenOFDM = 10230;
 
 % 初始化卡尔曼滤波器
-% 状态向量 x = [码相位误差; 码频率误差; 载波相位误差; 载波频率误差]
+% 状态向量 x = [载波频率误差; 载波相位误差; 码频率误差; 码相位误差]
 kf.x = [0; 0; 0; 0];  % 初始误差状态
-kf.P = diag([1e-1, 1e-3, 1e-1, 1e-3]);  % 初始协方差矩阵
-kf.Q = diag([1e-7, 1e-9, 1e-7, 1e-9]);  % 过程噪声协方差
+kf.P = diag([1e-3, 1e-1, 1e-3, 1e-1]);  % 初始协方差矩阵
+kf.Q = diag([1e-9, 1e-7, 1e-9, 1e-7]);  % 过程噪声协方差
 kf.R = diag([5e-2, 5e-2]);              % 测量噪声协方差
-kf.H = [1 0.1 0 0;   % 测量矩阵，包含频率误差对相位的影响
-        0 0 1 0.1];  % 增加频率误差耦合项
+kf.H = [0 1 0 0;   % 测量矩阵，测量载波相位误差
+        0 0 0 1];  % 测量码相位误差
 
 % 初始化不同类型的卡尔曼滤波器
 kf_standard = kf;
@@ -253,22 +253,22 @@ for loopCnt=1:size(t0,2)
     % 应用标准卡尔曼滤波器的误差校正
     % 卡尔曼滤波器的状态向量 x 表示误差估计
     % 将估计的误差应用于原始跟踪结果，得到校正后的结果
-    std_codePhase = original_codePhase - kf_standard.x(1);
-    std_codeFreq = original_codeFreq - kf_standard.x(2);
-    std_carrPhase = original_carrPhase - kf_standard.x(3);
-    std_carrFreq = original_carrFreq - kf_standard.x(4);
+    std_carrFreq = original_carrFreq - kf_standard.x(1);
+    std_carrPhase = original_carrPhase - kf_standard.x(2);
+    std_codeFreq = original_codeFreq - kf_standard.x(3);
+    std_codePhase = original_codePhase - kf_standard.x(4);
     
     % 应用扩展卡尔曼滤波器的误差校正
-    ext_codePhase = original_codePhase - kf_extended.x(1);
-    ext_codeFreq = original_codeFreq - kf_extended.x(2);
-    ext_carrPhase = original_carrPhase - kf_extended.x(3);
-    ext_carrFreq = original_carrFreq - kf_extended.x(4);
+    ext_carrFreq = original_carrFreq - kf_extended.x(1);
+    ext_carrPhase = original_carrPhase - kf_extended.x(2);
+    ext_codeFreq = original_codeFreq - kf_extended.x(3);
+    ext_codePhase = original_codePhase - kf_extended.x(4);
     
     % 应用无迹卡尔曼滤波器的误差校正
-    ukf_codePhase = original_codePhase - kf_unscented.x(1);
-    ukf_codeFreq = original_codeFreq - kf_unscented.x(2);
-    ukf_carrPhase = original_carrPhase - kf_unscented.x(3);
-    ukf_carrFreq = original_carrFreq - kf_unscented.x(4);
+    ukf_carrFreq = original_carrFreq - kf_unscented.x(1);
+    ukf_carrPhase = original_carrPhase - kf_unscented.x(2);
+    ukf_codeFreq = original_codeFreq - kf_unscented.x(3);
+    ukf_codePhase = original_codePhase - kf_unscented.x(4);
     
     % 保存不同卡尔曼滤波器的状态和修正后的结果
     % 标准卡尔曼滤波器
@@ -290,20 +290,20 @@ for loopCnt=1:size(t0,2)
     output.KF_Unscented_CarrFreq(loopCnt) = ukf_carrFreq;
     
     % 保存卡尔曼滤波器的误差估计值
-    output.KF_Standard_Error_CodePhase(loopCnt) = kf_standard.x(1);
-    output.KF_Standard_Error_CodeFreq(loopCnt) = kf_standard.x(2);
-    output.KF_Standard_Error_CarrPhase(loopCnt) = kf_standard.x(3);
-    output.KF_Standard_Error_CarrFreq(loopCnt) = kf_standard.x(4);
+    output.KF_Standard_Error_CarrFreq(loopCnt) = kf_standard.x(1);
+    output.KF_Standard_Error_CarrPhase(loopCnt) = kf_standard.x(2);
+    output.KF_Standard_Error_CodeFreq(loopCnt) = kf_standard.x(3);
+    output.KF_Standard_Error_CodePhase(loopCnt) = kf_standard.x(4);
     
-    output.KF_Extended_Error_CodePhase(loopCnt) = kf_extended.x(1);
-    output.KF_Extended_Error_CodeFreq(loopCnt) = kf_extended.x(2);
-    output.KF_Extended_Error_CarrPhase(loopCnt) = kf_extended.x(3);
-    output.KF_Extended_Error_CarrFreq(loopCnt) = kf_extended.x(4);
+    output.KF_Extended_Error_CarrFreq(loopCnt) = kf_extended.x(1);
+    output.KF_Extended_Error_CarrPhase(loopCnt) = kf_extended.x(2);
+    output.KF_Extended_Error_CodeFreq(loopCnt) = kf_extended.x(3);
+    output.KF_Extended_Error_CodePhase(loopCnt) = kf_extended.x(4);
     
-    output.KF_Unscented_Error_CodePhase(loopCnt) = kf_unscented.x(1);
-    output.KF_Unscented_Error_CodeFreq(loopCnt) = kf_unscented.x(2);
-    output.KF_Unscented_Error_CarrPhase(loopCnt) = kf_unscented.x(3);
-    output.KF_Unscented_Error_CarrFreq(loopCnt) = kf_unscented.x(4);
+    output.KF_Unscented_Error_CarrFreq(loopCnt) = kf_unscented.x(1);
+    output.KF_Unscented_Error_CarrPhase(loopCnt) = kf_unscented.x(2);
+    output.KF_Unscented_Error_CodeFreq(loopCnt) = kf_unscented.x(3);
+    output.KF_Unscented_Error_CodePhase(loopCnt) = kf_unscented.x(4);
 
     % 保存原始跟踪结果
     output.OutCarrFreq(loopCnt) = original_carrFreq;
