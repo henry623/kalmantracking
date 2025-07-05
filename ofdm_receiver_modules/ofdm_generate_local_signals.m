@@ -38,8 +38,8 @@ function [local_signals] = ofdm_generate_local_signals(simSettings)
 %   - 添加循环保护间隔以处理边界效应
 %   - 支持多频带OFDM信号生成
 %
-% 作者: OFDM接收机开发团队
-% 日期: 2025年1月
+% 作者: OFDM接收机开发
+% 日期: 2025年7月
 % 版本: 1.0
 
 %% 1. 输入参数验证

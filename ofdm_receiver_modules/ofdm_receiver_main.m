@@ -27,8 +27,8 @@ function [output] = ofdm_receiver_main(simSettings, received_signal, enable_kalm
 %   7. 性能评估
 %   8. 结果可视化
 %
-% 作者: OFDM接收机开发团队
-% 日期: 2025年1月
+% 作者: OFDM接收机开发
+% 日期: 2025年7月
 % 版本: 1.0
 
 %% 输入参数检查和默认值设置

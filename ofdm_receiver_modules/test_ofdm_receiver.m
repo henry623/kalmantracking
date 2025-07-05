@@ -3,8 +3,8 @@
 % 本脚本演示如何使用新创建的模块化OFDM接收机系统
 % 包括初始化、本地信号生成、跟踪参数设置、信号跟踪和结果输出
 %
-% 作者: OFDM接收机开发团队
-% 日期: 2025年1月
+% 作者: OFDM接收机开发
+% 日期: 2025年7月
 % 版本: 1.0
 
 clear; close all; clc;
@@ -29,7 +29,7 @@ if ~isfield(simSettings, 't_total')
 end
 
 % 加载本地码
-load('weil10230_signed.mat');
+load('../weil10230_signed.mat');
 simSettings.code = weil10230_signed(1, :);  % 使用第一个PRN码
 
 fprintf('   - 仿真参数初始化完成\n');

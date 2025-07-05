@@ -1,0 +1,194 @@
+<svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font: bold 18px Arial; text-anchor: middle; fill: #2c3e50; }
+      .module { font: bold 12px Arial; text-anchor: middle; fill: #2c3e50; }
+      .function { font: 10px Arial; text-anchor: middle; fill: #34495e; }
+      .signal { font: 9px Arial; text-anchor: middle; fill: #7f8c8d; }
+      .box { fill: #ecf0f1; stroke: #34495e; stroke-width: 2; }
+      .main-box { fill: #3498db; stroke: #2980b9; stroke-width: 3; }
+      .init-box { fill: #e74c3c; stroke: #c0392b; stroke-width: 2; }
+      .process-box { fill: #2ecc71; stroke: #27ae60; stroke-width: 2; }
+      .output-box { fill: #f39c12; stroke: #e67e22; stroke-width: 2; }
+      .arrow { stroke: #34495e; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .data-flow { stroke: #e74c3c; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#34495e"/>
+    </marker>
+  </defs>
+  
+  <!-- 标题 -->
+  <text x="600" y="30" class="title">OFDM接收机模块化系统架构图</text>
+  
+  <!-- 主控制模块 -->
+  <rect x="450" y="60" width="300" height="60" class="main-box" rx="10"/>
+  <text x="600" y="85" class="module">主控制模块</text>
+  <text x="600" y="105" class="function">ofdm_receiver_main.m</text>
+  
+  <!-- 第一层：初始化模块 -->
+  <g id="init-layer">
+    <!-- 参数初始化 -->
+    <rect x="50" y="160" width="150" height="80" class="init-box" rx="5"/>
+    <text x="125" y="185" class="module">参数初始化</text>
+    <text x="125" y="205" class="function">init.m</text>
+    <text x="125" y="220" class="signal">SNR → simSettings</text>
+    
+    <!-- 接收机初始化 -->
+    <rect x="250" y="160" width="150" height="80" class="init-box" rx="5"/>
+    <text x="325" y="185" class="module">接收机初始化</text>
+    <text x="325" y="205" class="function">ofdm_receiver_init.m</text>
+    <text x="325" y="220" class="signal">信号预处理</text>
+    
+    <!-- 本地信号生成 -->
+    <rect x="450" y="160" width="150" height="80" class="init-box" rx="5"/>
+    <text x="525" y="185" class="module">本地信号生成</text>
+    <text x="525" y="205" class="function">ofdm_generate_local_signals.m</text>
+    <text x="525" y="220" class="signal">yr0, yi0</text>
+    
+    <!-- 跟踪参数初始化 -->
+    <rect x="650" y="160" width="150" height="80" class="init-box" rx="5"/>
+    <text x="725" y="185" class="module">跟踪参数初始化</text>
+    <text x="725" y="205" class="function">ofdm_tracking_init.m</text>
+    <text x="725" y="220" class="signal">DLL/PLL参数</text>
+    
+    <!-- 卡尔曼滤波器初始化 -->
+    <rect x="850" y="160" width="150" height="80" class="init-box" rx="5"/>
+    <text x="925" y="185" class="module">卡尔曼滤波器</text>
+    <text x="925" y="205" class="function">ofdm_kalman_init.m</text>
+    <text x="925" y="220" class="signal">A,H,Q,R矩阵</text>
+  </g>
+  
+  <!-- 第二层：核心处理模块 -->
+  <g id="process-layer">
+    <!-- 信号跟踪循环 -->
+    <rect x="200" y="300" width="200" height="100" class="process-box" rx="5"/>
+    <text x="300" y="325" class="module">信号跟踪循环</text>
+    <text x="300" y="345" class="function">ofdm_tracking_loop.m</text>
+    <text x="300" y="365" class="signal">DLL/PLL鉴别器</text>
+    <text x="300" y="380" class="signal">载波/码跟踪</text>
+    
+    <!-- OFDM解调 -->
+    <rect x="450" y="300" width="150" height="100" class="process-box" rx="5"/>
+    <text x="525" y="325" class="module">OFDM解调</text>
+    <text x="525" y="345" class="function">ofdm_demodulation.m</text>
+    <text x="525" y="365" class="signal">资源网格</text>
+    <text x="525" y="380" class="signal">解调数据</text>
+    
+    <!-- 性能评估 -->
+    <rect x="650" y="300" width="150" height="100" class="process-box" rx="5"/>
+    <text x="725" y="325" class="module">性能评估</text>
+    <text x="725" y="345" class="function">ofdm_performance_evaluation.m</text>
+    <text x="725" y="365" class="signal">SNR, 锁定指示器</text>
+    <text x="725" y="380" class="signal">收敛时间</text>
+  </g>
+  
+  <!-- 第三层：输出模块 -->
+  <g id="output-layer">
+    <!-- 结果可视化 -->
+    <rect x="300" y="450" width="150" height="80" class="output-box" rx="5"/>
+    <text x="375" y="475" class="module">结果可视化</text>
+    <text x="375" y="495" class="function">ofdm_visualization.m</text>
+    <text x="375" y="510" class="signal">图表生成</text>
+    
+    <!-- 结果输出 -->
+    <rect x="500" y="450" width="150" height="80" class="output-box" rx="5"/>
+    <text x="575" y="475" class="module">结果输出</text>
+    <text x="575" y="495" class="function">ofdm_results_output.m</text>
+    <text x="575" y="510" class="signal">数据保存</text>
+  </g>
+  
+  <!-- 辅助函数模块 -->
+  <g id="helper-functions">
+    <rect x="50" y="580" width="120" height="60" class="box" rx="5"/>
+    <text x="110" y="605" class="function">generateCrossOFDM.m</text>
+    <text x="110" y="620" class="signal">OFDM调制</text>
+    
+    <rect x="200" y="580" width="120" height="60" class="box" rx="5"/>
+    <text x="260" y="605" class="function">interpo.m</text>
+    <text x="260" y="620" class="signal">信号插值</text>
+    
+    <rect x="350" y="580" width="120" height="60" class="box" rx="5"/>
+    <text x="410" y="605" class="function">calLoopCoef.m</text>
+    <text x="410" y="620" class="signal">环路系数</text>
+    
+    <rect x="500" y="580" width="120" height="60" class="box" rx="5"/>
+    <text x="560" y="605" class="function">test_ofdm_receiver.m</text>
+    <text x="560" y="620" class="signal">系统测试</text>
+  </g>
+  
+  <!-- 数据流箭头 -->
+  <!-- 从主控制到初始化层 -->
+  <line x1="600" y1="120" x2="125" y2="160" class="arrow"/>
+  <line x1="600" y1="120" x2="325" y2="160" class="arrow"/>
+  <line x1="600" y1="120" x2="525" y2="160" class="arrow"/>
+  <line x1="600" y1="120" x2="725" y2="160" class="arrow"/>
+  <line x1="600" y1="120" x2="925" y2="160" class="arrow"/>
+  
+  <!-- 从初始化层到处理层 -->
+  <line x1="325" y1="240" x2="300" y2="300" class="data-flow"/>
+  <line x1="525" y1="240" x2="300" y2="300" class="data-flow"/>
+  <line x1="725" y1="240" x2="300" y2="300" class="data-flow"/>
+  <line x1="925" y1="240" x2="300" y2="300" class="data-flow"/>
+  
+  <!-- 处理层内部流程 -->
+  <line x1="400" y1="350" x2="450" y2="350" class="arrow"/>
+  <line x1="600" y1="350" x2="650" y2="350" class="arrow"/>
+  
+  <!-- 从处理层到输出层 -->
+  <line x1="525" y1="400" x2="375" y2="450" class="arrow"/>
+  <line x1="725" y1="400" x2="575" y2="450" class="arrow"/>
+  
+  <!-- 辅助函数连接 -->
+  <line x1="110" y1="580" x2="525" y2="240" class="arrow" stroke-dasharray="5,5"/>
+  <line x1="260" y1="580" x2="525" y2="240" class="arrow" stroke-dasharray="5,5"/>
+  <line x1="410" y1="580" x2="725" y2="240" class="arrow" stroke-dasharray="5,5"/>
+  
+  <!-- 图例 -->
+  <g id="legend">
+    <rect x="50" y="680" width="300" height="100" class="box" rx="5"/>
+    <text x="200" y="700" class="module">图例说明</text>
+    
+    <rect x="70" y="710" width="20" height="15" class="init-box"/>
+    <text x="100" y="722" class="signal">初始化模块</text>
+    
+    <rect x="70" y="730" width="20" height="15" class="process-box"/>
+    <text x="100" y="742" class="signal">核心处理模块</text>
+    
+    <rect x="180" y="710" width="20" height="15" class="output-box"/>
+    <text x="210" y="722" class="signal">输出模块</text>
+    
+    <rect x="180" y="730" width="20" height="15" class="box"/>
+    <text x="210" y="742" class="signal">辅助函数</text>
+    
+    <line x1="70" y1="755" x2="100" y2="755" class="arrow"/>
+    <text x="110" y="760" class="signal">控制流</text>
+    
+    <line x1="180" y1="755" x2="210" y2="755" class="data-flow"/>
+    <text x="220" y="760" class="signal">数据流</text>
+  </g>
+  
+  <!-- 关键参数说明 -->
+  <g id="parameters">
+    <rect x="850" y="450" width="300" height="280" class="box" rx="5"/>
+    <text x="1000" y="475" class="module">关键参数说明</text>
+    
+    <text x="870" y="500" class="signal">OFDM参数:</text>
+    <text x="870" y="515" class="signal">• NFFT = 1024 (FFT点数)</text>
+    <text x="870" y="530" class="signal">• Nu = 400 (有效子载波)</text>
+    <text x="870" y="545" class="signal">• nSymbol = 20 (符号数)</text>
+    <text x="870" y="560" class="signal">• CP_length = 256 (循环前缀)</text>
+    
+    <text x="870" y="585" class="signal">信号处理参数:</text>
+    <text x="870" y="600" class="signal">• famp = 2 (插值倍数)</text>
+    <text x="870" y="615" class="signal">• extra = 20 (保护间隔)</text>
+    
+    <text x="870" y="640" class="signal">跟踪参数:</text>
+    <text x="870" y="655" class="signal">• DLL带宽 = 1.0 Hz</text>
+    <text x="870" y="670" class="signal">• PLL带宽 = 10.0 Hz</text>
+    
+    <text x="870" y="695" class="signal">搜索参数:</text>
+    <text x="870" y="710" class="signal">• 搜索范围 = 2048 samples</text>
+    <text x="870" y="725" class="signal">• 搜索步长 = 2 samples</text>
+  </g>
+</svg>

@@ -27,8 +27,8 @@ function ofdm_results_output(all_tracking_results, simSettings, output_options)
 %   4. 统计报告生成
 %   5. 文件保存（可选）
 %
-% 作者: OFDM接收机开发团队
-% 日期: 2025年1月
+% 作者: OFDM接收机开发
+% 日期: 2025年7月
 % 版本: 1.0
 
 %% 1. 输入参数验证和默认设置

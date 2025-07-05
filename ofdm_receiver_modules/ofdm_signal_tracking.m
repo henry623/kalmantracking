@@ -34,8 +34,8 @@ function [tracking_results] = ofdm_signal_tracking(processed_signal, local_signa
 %   - 失锁检测和重捕获
 %   - 实时性能监控
 %
-% 作者: OFDM接收机开发团队
-% 日期: 2025年1月
+% 作者: OFDM接收机开发
+% 日期: 2025年7月
 % 版本: 1.0
 
 %% 1. 输入参数验证

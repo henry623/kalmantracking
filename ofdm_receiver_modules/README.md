@@ -17,7 +17,24 @@
 
 ## 快速开始
 
-### 1. 基本使用方法
+### 1. 查看系统架构图
+
+首先建议查看系统架构图来理解整个系统的结构：
+
+```bash
+# 方法1：在浏览器中打开（推荐）
+open system_block_diagram.svg
+
+# 方法2：在VSCode中查看
+# 直接点击VSCode中的 system_block_diagram.svg 标签页
+
+# 方法3：在Finder中查看（macOS）
+open .  # 打开当前文件夹，然后双击SVG文件
+```
+
+配套的详细说明文档：`SYSTEM_ARCHITECTURE.md`
+
+### 2. 基本使用方法
 
 ```matlab
 % 运行测试脚本
@@ -183,8 +200,8 @@ output_options.file_prefix = 'ofdm';   % 文件名前缀
 
 ## 版本信息
 - 版本: 1.0
-- 创建日期: 2025年1月
-- 作者: OFDM接收机开发团队
+- 创建日期: 2025年7月
+- 作者: OFDM接收机开发
 
 ## 许可证
 本代码仅供学习和研究使用。

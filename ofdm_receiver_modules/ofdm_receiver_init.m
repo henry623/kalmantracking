@@ -48,8 +48,8 @@ function [processed_signal, init_params] = ofdm_receiver_init(simSettings, recei
 %   - 信号长度不足时会进行零填充并给出警告
 %   - 参数缺失时会使用默认值并给出提示
 %
-% 作者: OFDM接收机开发团队
-% 日期: 2025年1月
+% 作者: OFDM接收机开发
+% 日期: 2025年7月
 % 版本: 1.0
 
 %% 1. 输入参数验证
