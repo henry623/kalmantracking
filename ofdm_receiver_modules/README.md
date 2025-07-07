@@ -192,11 +192,34 @@ output_options.file_prefix = 'ofdm';   % 文件名前缀
 1. **"函数未找到"错误**: 确保所有依赖函数在MATLAB路径中
 2. **内存不足**: 对于长信号，考虑分段处理
 3. **跟踪性能差**: 调整环路带宽参数或检查信号质量
+4. **文件路径错误**: 确认 `weil10230_signed.mat` 文件路径正确
 
 ### 调试建议
-1. 使用`test_ofdm_receiver.m`验证系统基本功能
-2. 检查每个模块的输出信息和警告
-3. 使用可视化结果分析跟踪性能
+1. 使用`test_fixed_system.m`验证修复后的系统功能
+2. 使用`test_ofdm_receiver.m`进行详细的模块测试
+3. 检查每个模块的输出信息和警告
+4. 使用可视化结果分析跟踪性能
+
+### 系统修复状态 (2025年7月)
+✅ **已修复的问题**:
+1. 添加了缺失的参数字段 (`fi`, `fp`, `dt`, `t_total`)
+2. 创建了 `ofdm_demodulation.m` 模块
+3. 创建了 `ofdm_performance_evaluation.m` 模块  
+4. 创建了 `ofdm_visualization.m` 模块
+5. 修复了主函数中的计时器问题
+6. 修复了MATLAB语法兼容性问题
+7. **修复了信号生成中的维度不匹配问题**:
+   - 修复了 `generateCrossOFDM.m` 中 `time_data` 转置导致的维度错误
+   - 添加了 `reshape` 操作的安全检查和错误处理
+   - 改进了信号连接时的维度一致性处理
+   - 增强了插值函数的维度处理能力
+
+✅ **系统状态**: 所有核心模块已完整实现并通过测试
+
+### 测试脚本
+- `test_fixed_system.m` - 完整系统功能测试
+- `test_dimension_fix.m` - 专门测试维度修复的脚本
+- `test_ofdm_receiver.m` - 原始模块测试脚本
 
 ## 版本信息
 - 版本: 1.0

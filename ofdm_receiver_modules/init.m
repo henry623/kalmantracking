@@ -33,7 +33,11 @@ end
 simSettings.SNR = SNR_dB;                    % 信噪比 (dB)
 simSettings.fs = 2e6;                        % 采样频率 (Hz)
 simSettings.fc = 1e9;                        % 载波频率 (Hz)
+simSettings.fi = 0;                          % 中频频率 (Hz)
+simSettings.fp = 1.023e6;                    % 码频率 (Hz)
 simSettings.T = 1e-3;                        % 符号周期 (s)
+simSettings.dt = 1e-3;                       % 时间间隔 (s)
+simSettings.t_total = 1.0;                   % 总仿真时间 (s)
 
 %% OFDM参数
 simSettings.NFFT = 1024;                     % FFT点数

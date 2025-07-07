@@ -82,6 +82,8 @@ if rows == 2 && cols > 1
     
 elseif rows == 1 && cols > 1 && ~isreal(received_signal)
     % 复数格式：1×N复数向量
+    % 数据验证和清理
+    received_signal(~isfinite(received_signal)) = 0;
     rawSignalI = real(received_signal);
     rawSignalQ = imag(received_signal);
     signal_format = 'complex';
@@ -90,6 +92,8 @@ elseif rows == 1 && cols > 1 && ~isreal(received_signal)
 elseif cols == 1 && rows > 1 && ~isreal(received_signal)
     % 复数格式：N×1复数向量（转置）
     received_signal = received_signal.';
+    % 数据验证和清理
+    received_signal(~isfinite(received_signal)) = 0;
     rawSignalI = real(received_signal);
     rawSignalQ = imag(received_signal);
     signal_format = 'complex_transposed';

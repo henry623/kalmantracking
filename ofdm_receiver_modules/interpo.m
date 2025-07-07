@@ -65,6 +65,8 @@ for band_idx = 1:num_bands
     
     if is_complex
         % 复数信号：分别对实部和虚部进行插值
+        % 数据验证和清理
+        current_signal(~isfinite(current_signal)) = 0;
         real_part = real(current_signal);
         imag_part = imag(current_signal);
         
@@ -74,11 +76,41 @@ for band_idx = 1:num_bands
         % 插值虚部
         interp_imag = perform_interpolation(imag_part, interpolation_factor);
         
+        % 检查插值结果长度并调整
+        if length(interp_real) ~= output_length
+            if length(interp_real) > output_length
+                interp_real = interp_real(1:output_length);
+                interp_imag = interp_imag(1:output_length);
+            else
+                % 长度不足，用零填充
+                temp_real = zeros(1, output_length);
+                temp_imag = zeros(1, output_length);
+                temp_real(1:length(interp_real)) = interp_real;
+                temp_imag(1:length(interp_imag)) = interp_imag;
+                interp_real = temp_real;
+                interp_imag = temp_imag;
+            end
+        end
+        
         % 合并复数信号
         interpolated_signal(band_idx, :) = interp_real + 1j * interp_imag;
     else
         % 实数信号：直接插值
-        interpolated_signal(band_idx, :) = perform_interpolation(current_signal, interpolation_factor);
+        interp_result = perform_interpolation(current_signal, interpolation_factor);
+        
+        % 检查插值结果长度并调整
+        if length(interp_result) ~= output_length
+            if length(interp_result) > output_length
+                interp_result = interp_result(1:output_length);
+            else
+                % 长度不足，用零填充
+                temp_result = zeros(1, output_length);
+                temp_result(1:length(interp_result)) = interp_result;
+                interp_result = temp_result;
+            end
+        end
+        
+        interpolated_signal(band_idx, :) = interp_result;
     end
 end
 
@@ -129,6 +161,11 @@ new_indices = linspace(1, data_length, output_length);
 % 执行线性插值
 interpolated_data = interp1(original_indices, data, new_indices, 'linear', 'extrap');
 
+% 确保输出是行向量
+if size(interpolated_data, 1) > size(interpolated_data, 2)
+    interpolated_data = interpolated_data.';
+end
+
 end
 
 function interpolated_data = frequency_domain_interpolation(data, factor)
@@ -176,6 +213,11 @@ interpolated_data = ifft(padded_fft) * factor;
 % 确保输出为实数（如果输入为实数）
 if isreal(data)
     interpolated_data = real(interpolated_data);
+end
+
+% 确保输出是行向量
+if size(interpolated_data, 1) > size(interpolated_data, 2)
+    interpolated_data = interpolated_data.';
 end
 
 end

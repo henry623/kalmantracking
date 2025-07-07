@@ -44,6 +44,9 @@ fprintf('=== OFDM接收机启动 ===\n');
 fprintf('模块化OFDM接收机 v1.0\n');
 fprintf('处理开始时间: %s\n', datestr(now));
 
+% 开始计时
+tic;
+
 %% 模块1: 参数初始化和信号预处理
 fprintf('\n[模块1] 参数初始化和信号预处理...\n');
 [processed_signal, init_params] = ofdm_receiver_init(simSettings, received_signal);

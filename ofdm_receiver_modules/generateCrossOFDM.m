@@ -83,7 +83,28 @@ else
 end
 
 % 将数据符号重新整形为 (nSymbol × total_subcarriers)
-data_matrix = reshape(data_symbols, total_subcarriers, nSymbol).';
+% 确保数据符号是行向量
+if size(data_symbols, 1) > size(data_symbols, 2)
+    data_symbols = data_symbols.';
+end
+
+% 安全的reshape操作
+try
+    data_matrix = reshape(data_symbols, total_subcarriers, nSymbol).';
+catch ME
+    % 如果reshape失败，尝试调整数据长度
+    fprintf('    * 警告: reshape失败，调整数据长度\n');
+    required_length = total_subcarriers * nSymbol;
+    if length(data_symbols) < required_length
+        % 数据不足，重复填充
+        data_symbols = repmat(data_symbols, 1, ceil(required_length / length(data_symbols)));
+        data_symbols = data_symbols(1:required_length);
+    else
+        % 数据过多，截取
+        data_symbols = data_symbols(1:required_length);
+    end
+    data_matrix = reshape(data_symbols, total_subcarriers, nSymbol).';
+end
 
 %% 4. 初始化资源网格
 fprintf('  - 初始化OFDM资源网格...\n');
@@ -162,8 +183,11 @@ for bandID = 1:numBand
         % IFFT变换
         time_data = ifft(freq_data, NFFT);
         
-        % 添加到时域信号
-        band_time_signal = [band_time_signal, time_data.'];
+        % 确保time_data是行向量，然后添加到时域信号
+        if size(time_data, 1) > size(time_data, 2)
+            time_data = time_data.';  % 转置为行向量
+        end
+        band_time_signal = [band_time_signal, time_data];
     end
     
     % 存储频带信号

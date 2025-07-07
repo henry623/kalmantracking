@@ -28,7 +28,7 @@ simSettings.v0 = [100,0,0]*1000/3600; % 速度
 simSettings.BS = simSettings.p0; % 基站位置
 % simSettings.BS = [0,0,0]; % 基站位置
 
-simSettings.famp = 8; % 采样率是码率的倍数（没有对非整数做处理）
+simSettings.famp = 3; % 采样率是码率的倍数（没有对非整数做处理）
 simSettings.numBand = 4; % 跨的频段数量
 simSettings.extra = 5; % 前后额外取的量
 

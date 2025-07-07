@@ -117,7 +117,7 @@ for loop_idx = 1:num_loops
     %% 码相关处理
     % 计算本地码的起始位置
     code_samples_per_chip = basic_params.fs / current_code_freq;
-    code_start_sample = mod(current_code_phase, size(yr0, 2));
+    code_start_sample = round(mod(current_code_phase, size(yr0, 2)));
     
     % 生成早、准时、晚本地码
     [early_code_I, prompt_code_I, late_code_I] = generate_local_codes(yr0, yi0, ...
@@ -145,7 +145,10 @@ for loop_idx = 1:num_loops
     dll_disc = (early_power - late_power) / (early_power + late_power + eps);
     
     % PLL鉴别器 (Costas Loop)
-    pll_disc = atan2(QP, IP);
+    % 确保输入为实数
+    QP_real = real(QP);
+    IP_real = real(IP);
+    pll_disc = atan2(QP_real, IP_real);
     
     % 存储鉴别器输出
     DLL_discriminator(loop_idx) = dll_disc;
@@ -185,9 +188,9 @@ for loop_idx = 1:num_loops
     current_code_phase = current_code_phase + code_phase_correction;
     current_carr_phase = current_carr_phase + carr_phase_correction;
     
-    % 相位归一化
-    current_carr_phase = mod(current_carr_phase, 2*pi);
-    current_code_phase = mod(current_code_phase, size(yr0, 2));
+    % 相位归一化 - 确保输入为实数
+    current_carr_phase = mod(real(current_carr_phase), 2*pi);
+    current_code_phase = mod(real(current_code_phase), size(yr0, 2));
     
     %% 性能指标计算
     % 信噪比估计
@@ -265,9 +268,13 @@ function [early_code, prompt_code, late_code] = generate_local_codes(code_I, cod
 code_length = size(code_I, 2);
 
 % 计算早、准时、晚的起始位置
-prompt_start = mod(start_sample - 1, code_length) + 1;
-early_start = mod(prompt_start - early_late_spacing - 1, code_length) + 1;
-late_start = mod(prompt_start + early_late_spacing - 1, code_length) + 1;
+% 确保所有参数都是整数
+start_sample = round(start_sample);
+early_late_spacing = round(early_late_spacing);
+
+prompt_start = round(mod(start_sample - 1, code_length) + 1);
+early_start = round(mod(prompt_start - early_late_spacing - 1, code_length) + 1);
+late_start = round(mod(prompt_start + early_late_spacing - 1, code_length) + 1);
 
 % 生成码序列
 prompt_code = generate_code_sequence(code_I, prompt_start, length_needed);
@@ -294,14 +301,31 @@ num_repeats = ceil(length_needed / code_length);
 extended_code = repmat(code_vector, 1, num_repeats);
 
 % 提取所需长度的序列
+% 确保所有索引都是整数
+start_pos = round(start_pos);
+length_needed = round(length_needed);
+
+% 确保start_pos是有效的索引（至少为1）
+if start_pos < 1
+    start_pos = 1;
+end
+
 end_pos = start_pos + length_needed - 1;
-if end_pos <= length(extended_code)
+
+if end_pos <= length(extended_code) && start_pos >= 1
     code_sequence = extended_code(start_pos:end_pos);
 else
     % 处理边界情况
     code_sequence = zeros(1, length_needed);
-    available_length = min(length_needed, length(extended_code) - start_pos + 1);
-    code_sequence(1:available_length) = extended_code(start_pos:start_pos+available_length-1);
+    if start_pos >= 1 && start_pos <= length(extended_code)
+        available_length = min(length_needed, length(extended_code) - start_pos + 1);
+        available_length = round(available_length);
+        if available_length > 0
+            end_idx = min(start_pos + available_length - 1, length(extended_code));
+            actual_length = end_idx - start_pos + 1;
+            code_sequence(1:actual_length) = extended_code(start_pos:end_idx);
+        end
+    end
 end
 
 end

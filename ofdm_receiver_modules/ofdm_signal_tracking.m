@@ -28,6 +28,9 @@ function [tracking_results] = ofdm_signal_tracking(processed_signal, local_signa
 %   5. NCO更新和状态维护
 %   6. 性能监控和质量评估
 %
+
+% 持久变量声明（用于保存状态）
+persistent prev_tracking_state;
 % 技术细节:
 %   - 支持多频带OFDM信号跟踪
 %   - 自适应环路带宽调整
@@ -92,9 +95,7 @@ if loop_index == 1
     
     fprintf('      使用初始跟踪状态\n');
 else
-    % 从全局变量或持久变量中获取状态（这里简化处理）
-    % 在实际应用中，这些状态应该从上一次跟踪结果中获取
-    persistent prev_tracking_state;
+    % 从持久变量中获取状态（用于后续循环）
     if isempty(prev_tracking_state)
         % 如果没有前一状态，使用初始状态
         carrPhase = tracking_params.initial_states.carrPhase;
@@ -154,7 +155,14 @@ fprintf('      提取当前处理信号段...\n');
 % 计算当前处理的信号段
 samples_to_process = min(lenOFDM, signal_length - readIndex);
 if samples_to_process <= 0
-    error('ofdm_signal_tracking: 没有足够的信号进行处理');
+    % 如果到达信号末尾，重置读取索引到开始位置（循环处理）
+    fprintf('        信号已处理完毕，重置读取索引\n');
+    readIndex = 0;
+    samples_to_process = min(lenOFDM, signal_length);
+    
+    if samples_to_process <= 0
+        error('ofdm_signal_tracking: 信号长度不足，无法进行处理');
+    end
 end
 
 % 提取信号段
@@ -214,6 +222,32 @@ for bandID = 1:numBand
     late_local_I = local_I(late_indices);
     late_local_Q = local_Q(late_indices);
     
+    % 数据预验证 - 确保所有输入数据都是有效的数值
+    if ~isnumeric(baseband_I) || any(~isfinite(baseband_I))
+        baseband_I = zeros(size(baseband_I));
+    end
+    if ~isnumeric(baseband_Q) || any(~isfinite(baseband_Q))
+        baseband_Q = zeros(size(baseband_Q));
+    end
+    if ~isnumeric(early_local_I) || any(~isfinite(early_local_I))
+        early_local_I = zeros(size(early_local_I));
+    end
+    if ~isnumeric(early_local_Q) || any(~isfinite(early_local_Q))
+        early_local_Q = zeros(size(early_local_Q));
+    end
+    if ~isnumeric(prompt_local_I) || any(~isfinite(prompt_local_I))
+        prompt_local_I = zeros(size(prompt_local_I));
+    end
+    if ~isnumeric(prompt_local_Q) || any(~isfinite(prompt_local_Q))
+        prompt_local_Q = zeros(size(prompt_local_Q));
+    end
+    if ~isnumeric(late_local_I) || any(~isfinite(late_local_I))
+        late_local_I = zeros(size(late_local_I));
+    end
+    if ~isnumeric(late_local_Q) || any(~isfinite(late_local_Q))
+        late_local_Q = zeros(size(late_local_Q));
+    end
+    
     % 计算相关值
     % 早相关器
     I_E = sum(baseband_I .* early_local_I);
@@ -227,8 +261,22 @@ for bandID = 1:numBand
     I_L = sum(baseband_I .* late_local_I);
     Q_L = sum(baseband_Q .* late_local_Q);
     
-    % 存储相关器输出
+    % 数据验证和清理 - 确保数据类型和数值有效性
+    if ~isnumeric(I_E) || ~isfinite(I_E), I_E = 0; end
+    if ~isnumeric(Q_E) || ~isfinite(Q_E), Q_E = 0; end
+    if ~isnumeric(I_P) || ~isfinite(I_P), I_P = 0; end
+    if ~isnumeric(Q_P) || ~isfinite(Q_P), Q_P = 0; end
+    if ~isnumeric(I_L) || ~isfinite(I_L), I_L = 0; end
+    if ~isnumeric(Q_L) || ~isfinite(Q_L), Q_L = 0; end
+    
+    % 存储相关器输出 - 强制数据类型转换
     band_name = sprintf('band_%d', bandID);
+    
+    % 强制转换为双精度数值，确保complex()函数能正常工作
+    I_E = double(real(I_E)); Q_E = double(real(Q_E));
+    I_P = double(real(I_P)); Q_P = double(real(Q_P));
+    I_L = double(real(I_L)); Q_L = double(real(Q_L));
+    
     correlator_outputs.early.(band_name) = complex(I_E, Q_E);
     correlator_outputs.prompt.(band_name) = complex(I_P, Q_P);
     correlator_outputs.late.(band_name) = complex(I_L, Q_L);
@@ -244,6 +292,17 @@ for bandID = 1:numBand
     early_corr = correlator_outputs.early.(band_name);
     prompt_corr = correlator_outputs.prompt.(band_name);
     late_corr = correlator_outputs.late.(band_name);
+    
+    % 数据验证和清理
+    if ~isnumeric(early_corr) || ~isfinite(early_corr)
+        early_corr = 0;
+    end
+    if ~isnumeric(prompt_corr) || ~isfinite(prompt_corr)
+        prompt_corr = 0;
+    end
+    if ~isnumeric(late_corr) || ~isfinite(late_corr)
+        late_corr = 0;
+    end
     
     I_E_avg = I_E_avg + real(early_corr);
     Q_E_avg = Q_E_avg + imag(early_corr);
@@ -435,11 +494,14 @@ tracking_results.performance.carrier_tracking_error = carrier_tracking_error;
 tracking_results.processing_info = struct();
 tracking_results.processing_info.loop_index = loop_index;
 tracking_results.processing_info.samples_processed = samples_to_process;
-tracking_results.processing_info.tracking_mode = use_fll ? 'FLL' : 'PLL';
+if use_fll
+    tracking_results.processing_info.tracking_mode = 'FLL';
+else
+    tracking_results.processing_info.tracking_mode = 'PLL';
+end
 tracking_results.processing_info.num_bands = numBand;
 
 % 保存当前状态到持久变量（用于下次调用）
-persistent prev_tracking_state;
 prev_tracking_state = tracking_results.updated_states;
 
 fprintf('      跟踪处理完成\n');

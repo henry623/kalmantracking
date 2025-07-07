@@ -5,3 +5,13 @@ ldacs-may/ldacs-may/output/tracked_SNR-20.mat
 ldacs-may/ldacs-may/output/tracked_SNRInf.mat
 ldacs-may/ldacs-may/output/signal_SNR-10.mat
 ldacs-may/ldacs-may/output/tracked_SNR-10.mat
+ldacs-may/ldacs-may/output/tracked2_SNR-20.mat
+ldacs-may/ldacs-may/output/tracked2_SNRInf.mat
+ofdm_receiver_modules/test_results/ofdm_test_correlator_outputs.png
+ofdm_receiver_modules/test_results/ofdm_test_data.mat
+ofdm_receiver_modules/test_results/ofdm_test_frequency_tracking.png
+ofdm_receiver_modules/test_results/ofdm_test_performance_monitoring.png
+ofdm_receiver_modules/test_results/ofdm_test_report.txt
+ofdm_receiver_modules/test_results/ofdm_test_statistical_analysis.png
+ofdm_receiver_modules/test_results/ofdm_test_tracking_errors.png
+ofdm_receiver_modules/test_results/ofdm_test_tracking_modes.png

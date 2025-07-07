@@ -125,6 +125,14 @@ catch ME
 end
 
 % 分离实部和虚部
+% 数据验证和清理
+if ~isnumeric(rawSignal)
+    error('ofdm_generate_local_signals: rawSignal不是数值类型');
+end
+
+% 处理非有限值
+rawSignal(~isfinite(rawSignal)) = 0;
+
 yr_original = real(rawSignal);
 yi_original = imag(rawSignal);
 
@@ -147,8 +155,8 @@ if famp <= 1
 else
     try
         % 对实部和虚部分别进行插值
-        yr_interpolated = interpo(yr_original, famp);
-        yi_interpolated = interpo(yi_original, famp);
+        yr_interpolated = interpo_fixed(yr_original, famp);
+        yi_interpolated = interpo_fixed(yi_original, famp);
         
         fprintf('    * 插值倍数: %d\n', famp);
         fprintf('    * 插值后信号大小: %dx%d\n', size(yr_interpolated));
